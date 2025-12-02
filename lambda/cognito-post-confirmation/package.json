@@ -1,0 +1,19 @@
+{
+  "name": "cognito-post-confirmation",
+  "version": "1.0.0",
+  "description": "Lambda function for Cognito Post-Confirmation trigger to sync users to PostgreSQL",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "package": "zip -r function.zip dist/ node_modules/",
+    "deploy": "npm run build && npm run package"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.3"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.133",
+    "@types/node": "^20.11.5",
+    "typescript": "^5.3.3"
+  }
+}

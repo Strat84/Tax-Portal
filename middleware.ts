@@ -1,0 +1,100 @@
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { verifyToken } from './lib/auth/jwt'
+
+// Define public routes that don't require authentication
+const PUBLIC_ROUTES = [
+  '/',
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/verify-email',
+  '/reset-password',
+]
+
+// Define role-based route access
+const ROUTE_ACCESS = {
+  '/admin': ['admin'],
+  '/tax-pro': ['admin', 'tax_pro'],
+  '/client': ['admin', 'tax_pro', 'client'],
+}
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Allow public routes
+  if (PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith(route))) {
+    return NextResponse.next()
+  }
+
+  // Allow Next.js internals and static files
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next()
+  }
+
+  // Get token from cookie or Authorization header
+  const token = request.cookies.get('idToken')?.value ||
+                request.headers.get('authorization')?.replace('Bearer ', '')
+
+  if (!token) {
+    // No token, redirect to login
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Verify token
+  const user = await verifyToken(token)
+
+  if (!user) {
+    // Invalid token, redirect to login
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname)
+    const response = NextResponse.redirect(loginUrl)
+    response.cookies.delete('idToken')
+    return response
+  }
+
+  // Check role-based access
+  for (const [route, allowedRoles] of Object.entries(ROUTE_ACCESS)) {
+    if (pathname.startsWith(route)) {
+      if (!allowedRoles.includes(user.role)) {
+        // User doesn't have access to this route
+        return NextResponse.redirect(new URL('/unauthorized', request.url))
+      }
+    }
+  }
+
+  // Add user info to headers for downstream use
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-user-id', user.cognitoUserId)
+  requestHeaders.set('x-user-email', user.email)
+  requestHeaders.set('x-user-role', user.role)
+  if (user.name) {
+    requestHeaders.set('x-user-name', user.name)
+  }
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
+}
+
+// Configure which routes to run middleware on
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}
