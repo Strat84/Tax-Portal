@@ -44,6 +44,24 @@ export function FilePreview({ file, files = [], open, onOpenChange, onNavigate }
     }
   }, [file])
 
+  if (!file) return null
+
+  const currentIndex = files.findIndex(f => f.id === file.id)
+  const hasPrevious = currentIndex > 0
+  const hasNext = currentIndex < files.length - 1
+
+  const handlePrevious = () => {
+    if (hasPrevious && onNavigate) {
+      onNavigate(files[currentIndex - 1].id)
+    }
+  }
+
+  const handleNext = () => {
+    if (hasNext && onNavigate) {
+      onNavigate(files[currentIndex + 1].id)
+    }
+  }
+
   // Keyboard navigation
   useEffect(() => {
     if (!open) return
@@ -63,25 +81,7 @@ export function FilePreview({ file, files = [], open, onOpenChange, onNavigate }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, hasPrevious, hasNext, onNavigate, onOpenChange])
-
-  if (!file) return null
-
-  const currentIndex = files.findIndex(f => f.id === file.id)
-  const hasPrevious = currentIndex > 0
-  const hasNext = currentIndex < files.length - 1
-
-  const handlePrevious = () => {
-    if (hasPrevious && onNavigate) {
-      onNavigate(files[currentIndex - 1].id)
-    }
-  }
-
-  const handleNext = () => {
-    if (hasNext && onNavigate) {
-      onNavigate(files[currentIndex + 1].id)
-    }
-  }
+  }, [open, hasPrevious, hasNext, onNavigate, onOpenChange, handlePrevious, handleNext])
 
   const handleDownload = () => {
     // TODO: Implement actual download from Supabase Storage

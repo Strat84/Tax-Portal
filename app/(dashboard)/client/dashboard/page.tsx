@@ -36,7 +36,7 @@ export default function ClientDashboard() {
       id: '1',
       from: 'Sarah Johnson',
       subject: 'Updated tax forms available',
-      preview: 'I've uploaded your completed tax forms to the portal...',
+      preview: 'I have uploaded your completed tax forms to the portal...',
       date: '2 hours ago',
       unread: true,
     },

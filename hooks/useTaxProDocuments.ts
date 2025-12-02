@@ -1,3 +1,8 @@
+// NOTE: This hook is currently not in use.
+// The tax-pro documents page has been removed from the navigation.
+// Tax professionals now view documents only through individual client detail pages.
+// This hook is preserved for potential future use when API integration is implemented.
+
 import { useState, useEffect } from 'react'
 import { getTaxProDocuments, TaxProDocument } from '@/lib/api/documents'
 

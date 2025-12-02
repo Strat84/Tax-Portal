@@ -5,6 +5,43 @@ import { useRouter } from 'next/navigation'
 import { getCurrentUser, signOut as cognitoSignOut, fetchAuthSession } from 'aws-amplify/auth'
 import { createClient } from '@/lib/db/supabase'
 
+// TEMPORARY: Set to true to bypass authentication for UI testing
+const DEMO_MODE = true
+
+// Mock users for demo mode - change the role to test different views
+const MOCK_USERS = {
+  client: {
+    id: 'client-demo-001',
+    cognitoUserId: 'demo-cognito-client',
+    email: 'client@demo.com',
+    name: 'John Doe',
+    role: 'client' as const,
+    phone: '555-0100',
+    isActive: true,
+  },
+  tax_pro: {
+    id: 'taxpro-demo-001',
+    cognitoUserId: 'demo-cognito-taxpro',
+    email: 'taxpro@demo.com',
+    name: 'Sarah Johnson',
+    role: 'tax_pro' as const,
+    phone: '555-0200',
+    isActive: true,
+  },
+  admin: {
+    id: 'admin-demo-001',
+    cognitoUserId: 'demo-cognito-admin',
+    email: 'admin@demo.com',
+    name: 'Admin User',
+    role: 'admin' as const,
+    phone: '555-0300',
+    isActive: true,
+  },
+}
+
+// Change this to 'client', 'tax_pro', or 'admin' to test different roles
+const DEMO_ROLE: 'client' | 'tax_pro' | 'admin' = 'tax_pro'
+
 interface User {
   id: string
   cognitoUserId: string
@@ -36,6 +73,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true)
       setError(null)
+
+      // DEMO MODE: Skip authentication and use mock user
+      if (DEMO_MODE) {
+        await new Promise(resolve => setTimeout(resolve, 500)) // Simulate loading
+        setUser(MOCK_USERS[DEMO_ROLE])
+        setLoading(false)
+        console.log('🎭 DEMO MODE: Logged in as', DEMO_ROLE, '-', MOCK_USERS[DEMO_ROLE].name)
+        return
+      }
 
       // Get current Cognito user
       const cognitoUser = await getCurrentUser()
@@ -88,6 +134,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleSignOut = async () => {
     try {
+      // DEMO MODE: Just clear user and redirect
+      if (DEMO_MODE) {
+        setUser(null)
+        router.push('/')
+        console.log('🎭 DEMO MODE: Signed out')
+        return
+      }
+
       await cognitoSignOut()
 
       // Clear cookie

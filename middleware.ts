@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyToken } from './lib/auth/jwt'
 
+// TEMPORARY: Set to true to bypass authentication for UI testing
+const DEMO_MODE = true
+
 // Define public routes that don't require authentication
 const PUBLIC_ROUTES = [
   '/',
@@ -21,6 +24,11 @@ const ROUTE_ACCESS = {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // DEMO MODE: Allow all routes
+  if (DEMO_MODE) {
+    return NextResponse.next()
+  }
 
   // Allow public routes
   if (PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith(route))) {
