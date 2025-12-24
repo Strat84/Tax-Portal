@@ -1,0 +1,25 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-taxportal-dev-6bdb7-authRole",
+      "UnauthRoleArn": "arn:aws:iam::423623826179:role/amplify-taxportal-dev-6bdb7-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::423623826179:role/amplify-taxportal-dev-6bdb7-authRole",
+      "Region": "us-west-1",
+      "DeploymentBucketName": "amplify-taxportal-dev-6bdb7-deployment",
+      "UnauthRoleName": "amplify-taxportal-dev-6bdb7-unauthRole",
+      "StackName": "amplify-taxportal-dev-6bdb7",
+      "StackId": "arn:aws:cloudformation:us-west-1:423623826179:stack/amplify-taxportal-dev-6bdb7/cd8afc90-dfe8-11f0-bbfa-02d09b99d32d",
+      "AmplifyAppId": "d2kj6uty2pytqf"
+    },
+    "categories": {
+      "auth": {
+        "taxportal6c03c566": {
+          "userPoolId": "us-west-1_PxwkFeOJF",
+          "userPoolName": "unitedtax-dev-pool",
+          "webClientId": "4n7snq16olic7mslk8fith6srm",
+          "nativeClientId": "4n7snq16olic7mslk8fith6srm"
+        }
+      }
+    }
+  }
+}

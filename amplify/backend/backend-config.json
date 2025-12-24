@@ -1,0 +1,45 @@
+{
+  "auth": {
+    "taxportal6c03c566": {
+      "customAuth": false,
+      "dependsOn": [],
+      "providerPlugin": "awscloudformation",
+      "service": "Cognito",
+      "serviceType": "imported"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_auth_taxportal6c03c566_nativeClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal6c03c566"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal6c03c566_userPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal6c03c566"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal6c03c566_userPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal6c03c566"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal6c03c566_webClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal6c03c566"
+        }
+      ]
+    }
+  }
+}

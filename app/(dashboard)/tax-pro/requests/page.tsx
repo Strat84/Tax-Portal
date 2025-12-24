@@ -190,7 +190,7 @@ export default function TaxProDocumentRequestsPage() {
   const handleReject = async (requestId: string) => {
     try {
       setActionError(null)
-      await rejectDocumentRequest(requestId, 'Document rejected by tax professional')
+      await rejectDocumentRequest(requestId) // 'Document rejected by tax professional'
       await refetch()
     } catch (err: any) {
       console.error('Reject error:', err)
@@ -201,8 +201,8 @@ export default function TaxProDocumentRequestsPage() {
   const filteredRequests = requests.filter((req) => {
     const matchesStatus = filterStatus === 'all' || req.status === filterStatus
     const matchesSearch =
-      req.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      req.documentType.toLowerCase().includes(searchQuery.toLowerCase())
+     ( req.clientName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ( req.documentType || '').toLowerCase().includes(searchQuery.toLowerCase())
     return matchesStatus && matchesSearch
   })
 

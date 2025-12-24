@@ -46,8 +46,8 @@ export default function SignupPage() {
     }
 
     // Validate password requirements
-    if (formData.password.length < 12) {
-      setError('Password must be at least 12 characters long')
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long')
       setIsLoading(false)
       return
     }
@@ -180,7 +180,7 @@ export default function SignupPage() {
               disabled={isLoading}
             />
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Must be at least 12 characters with uppercase, lowercase, number, and special character
+              Must be at least 8 characters with uppercase, lowercase, number, and special character
             </p>
           </div>
 

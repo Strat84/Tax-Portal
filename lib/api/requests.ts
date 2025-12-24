@@ -111,7 +111,8 @@ export async function getTaxProRequests(taxProId: string): Promise<DocumentReque
 
 export async function createDocumentRequest(data: {
   clientId: string
-  taxProfessionalId: string
+  taxProfessionalId?: string
+  taxProId: string
   documentType: string
   description: string
   priority: 'low' | 'normal' | 'high' | 'urgent'

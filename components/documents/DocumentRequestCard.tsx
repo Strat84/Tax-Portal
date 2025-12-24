@@ -22,10 +22,10 @@ interface DocumentRequest {
   description: string
   priority: 'low' | 'normal' | 'high' | 'urgent'
   dueDate: string
-  status: 'pending' | 'uploaded' | 'approved' | 'rejected'
+  status: 'pending' | 'uploaded' | 'approved' | 'rejected' | 'cancelled'
   requestedAt: string
   notes?: string
-  taxProName: string
+  taxProName?: string
   uploadedFileName?: string
   uploadedAt?: string
   uploadedFileUrl?: string
@@ -90,6 +90,11 @@ export function DocumentRequestCard({ request, onUpload }: DocumentRequestCardPr
       label: 'Needs Revision',
       icon: '❌',
     },
+      cancelled: { 
+      badge: "bg-gray-100 text-gray-800",
+      label: "Cancelled",
+      icon: "🚫"
+    }
   }
 
   const getDaysUntilDue = () => {

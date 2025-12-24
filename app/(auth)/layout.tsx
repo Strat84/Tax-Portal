@@ -1,3 +1,5 @@
+
+import { Suspense } from 'react';
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,7 +44,9 @@ export default function AuthLayout({
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
+          <Suspense>
           {children}
+          </Suspense>
         </div>
       </main>
 

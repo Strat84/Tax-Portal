@@ -228,7 +228,7 @@ export default function ClientDocumentsPage() {
                   Upload files to {currentFolderId ? items.find(i => i.id === currentFolderId)?.name : 'My Documents'}
                 </DialogDescription>
               </DialogHeader>
-              <FileUpload onUpload={() => {}} />
+              <FileUpload onUpload={ async () => {}} />
             </DialogContent>
           </Dialog>
         </div>

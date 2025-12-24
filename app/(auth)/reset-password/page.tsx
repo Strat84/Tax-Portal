@@ -1,5 +1,4 @@
 'use client'
-
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -38,8 +37,8 @@ export default function ResetPasswordPage() {
     }
 
     // Validate password requirements
-    if (password.length < 12) {
-      setError('Password must be at least 12 characters long')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long')
       setIsLoading(false)
       return
     }
