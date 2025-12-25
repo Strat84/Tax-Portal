@@ -47,7 +47,7 @@ export async function signUp(
   password: string,
   name: string,
   phone?: string,
-  role: 'admin' | 'tax_pro' | 'client' = 'client'
+  role: 'ADMIN' | 'TAX_PRO' | 'CLIENT' = 'CLIENT'
 ) {
   try {
     const result = await amplifySignUp({

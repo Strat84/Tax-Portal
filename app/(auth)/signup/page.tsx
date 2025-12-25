@@ -58,7 +58,7 @@ export default function SignupPage() {
         formData.password,
         formData.name,
         formData.phone || undefined,
-        'client' // Default role for public signup
+        'CLIENT' // Default role for public signup
       )
 
       if (result.success) {

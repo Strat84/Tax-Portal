@@ -29,7 +29,7 @@ interface DashboardLayoutProps {
   children: ReactNode
   userName?: string
   userEmail?: string
-  userRole: 'admin' | 'tax_pro' | 'client'
+  userRole: 'ADMIN ' | 'TAX_PRO' | 'CLIENT'
   navItems: NavItem[]
 }
 

@@ -63,7 +63,7 @@ export default function ClientLayout({
     <DashboardLayout
       userName={userName}
       userEmail={userEmail}
-      userRole="client"
+      userRole="CLIENT"
       navItems={clientNavItems}
     >
       {children}
