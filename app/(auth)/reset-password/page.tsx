@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { configureAmplify, confirmPasswordReset } from '@/lib/auth/cognito'
+import PublicGuard from '@/components/auth/PublicGuard'
 
 // Configure Amplify on component mount
 configureAmplify()
@@ -64,7 +65,8 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <Card className="w-full shadow-xl border-slate-200 dark:border-slate-700">
+      <PublicGuard>
+        <Card className="w-full shadow-xl border-slate-200 dark:border-slate-700">
         <CardHeader>
           <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
             <svg
@@ -91,12 +93,14 @@ export default function ResetPasswordPage() {
             Redirecting you to the login page...
           </p>
         </CardContent>
-      </Card>
+        </Card>
+      </PublicGuard>
     )
   }
 
   return (
-    <Card className="w-full shadow-xl border-slate-200 dark:border-slate-700">
+    <PublicGuard>
+      <Card className="w-full shadow-xl border-slate-200 dark:border-slate-700">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold text-center">Reset password</CardTitle>
         <CardDescription className="text-center">
@@ -209,6 +213,7 @@ export default function ResetPasswordPage() {
           Back to login
         </Link>
       </CardFooter>
-    </Card>
+      </Card>
+    </PublicGuard>
   )
 }

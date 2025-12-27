@@ -3,7 +3,8 @@ import type { NextRequest } from 'next/server'
 import { verifyToken } from './lib/auth/jwt'
 
 // TEMPORARY: Set to true to bypass authentication for UI testing
-const DEMO_MODE = true
+// Set to false for production behavior where middleware enforces auth
+const DEMO_MODE = false
 
 // Define public routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -16,7 +17,7 @@ const PUBLIC_ROUTES = [
 ]
 
 // Define role-based route access
-const ROUTE_ACCESS = {
+const ROUTE_ACCESS: Record<string, Array<string>> = {
   '/admin': ['admin'],
   '/tax-pro': ['admin', 'tax_pro'],
   '/client': ['admin', 'tax_pro', 'client'],
@@ -27,11 +28,6 @@ export async function middleware(request: NextRequest) {
 
   // DEMO MODE: Allow all routes
   if (DEMO_MODE) {
-    return NextResponse.next()
-  }
-
-  // Allow public routes
-  if (PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith(route))) {
     return NextResponse.next()
   }
 
@@ -48,6 +44,21 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('idToken')?.value ||
                 request.headers.get('authorization')?.replace('Bearer ', '')
 
+  // If user hits a public/auth route and already has a valid token, redirect to dashboard
+  let verifiedUser = null
+  if (token) {
+    verifiedUser = await verifyToken(token)
+  }
+
+  if (PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith(route))) {
+    if (verifiedUser) {
+      // already authenticated -> send to dashboard
+      const to = new URL('/dashboard', request.url)
+      return NextResponse.redirect(to)
+    }
+    return NextResponse.next()
+  }
+
   if (!token) {
     // No token, redirect to login
     const loginUrl = new URL('/login', request.url)
@@ -55,8 +66,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Verify token
-  const user = await verifyToken(token)
+  // Verify token (if not verified above)
+  const user = verifiedUser ?? (await verifyToken(token))
 
   if (!user) {
     // Invalid token, redirect to login

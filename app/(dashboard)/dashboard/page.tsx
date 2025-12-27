@@ -11,7 +11,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-export default function TaxProDashboard() {
+export default function Dashboard() {
+
   // TODO: Fetch actual data from API
   const stats = [
     { label: 'Total Clients', value: '24', change: '+2 this month', icon: '👥' },
@@ -107,7 +108,7 @@ export default function TaxProDashboard() {
               <CardTitle>Recent Clients</CardTitle>
               <CardDescription>Clients you've worked with recently</CardDescription>
             </div>
-            <Link href="/tax-pro/clients">
+            <Link href="/clients">
               <Button>View All Clients</Button>
             </Link>
           </div>
@@ -254,7 +255,7 @@ export default function TaxProDashboard() {
                 Update Client Status
               </Button>
 
-              <Link href="/tax-pro/clients">
+              <Link href="/clients">
                 <Button className="w-full justify-start" variant="outline">
                   <svg
                     className="h-5 w-5 mr-2"

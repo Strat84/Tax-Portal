@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
 import { configureAmplify, signOut } from '@/lib/auth/cognito'
+import { User } from '@/graphql/types/users'
+import { DashboardUserProvider } from '@/contexts/DashboardUserContext'
 
 // Configure Amplify
 configureAmplify()
@@ -27,17 +29,17 @@ interface NavItem {
 
 interface DashboardLayoutProps {
   children: ReactNode
-  userName?: string
-  userEmail?: string
-  userRole: 'ADMIN ' | 'TAX_PRO' | 'CLIENT'
+  user?: User
+  loading?: boolean
+  error?: any
   navItems: NavItem[]
 }
 
 export function DashboardLayout({
   children,
-  userName = 'User',
-  userEmail = '',
-  userRole,
+  user,
+  loading,
+  error,
   navItems,
 }: DashboardLayoutProps) {
   const pathname = usePathname()
@@ -49,11 +51,29 @@ export function DashboardLayout({
     router.push('/login')
   }
 
-  const roleLabels = {
+  const roleLabels: any = {
     admin: 'Administrator',
     tax_pro: 'Tax Professional',
     client: 'Client',
   }
+
+  if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>
+  if (error) {
+    console.log('Error loading user:', error)
+    return <div className="flex items-center justify-center h-screen">Error loading user</div>
+  }
+  if (!user) return <div className="flex items-center justify-center h-screen">User not found</div>
+
+  // switch (user.role) {
+  //   case 'client':
+  //     return <ClientDashboard user={user} />
+  //   case 'tax_pro':
+  //     return <TaxProDashboard user={user} />
+  //   case 'admin':
+  //     return <AdminDashboard user={user} />
+  //   default:
+  //     return <div>Unauthorized</div>
+  // }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -111,7 +131,7 @@ export function DashboardLayout({
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar>
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    {userName.charAt(0).toUpperCase()}
+                    {user?.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -119,16 +139,16 @@ export function DashboardLayout({
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{userName}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
+                  <p className="text-sm font-medium leading-none">{user?.name}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                   <p className="text-xs leading-none text-muted-foreground mt-1">
-                    {roleLabels[userRole]}
+                    {roleLabels[user?.role?.toLowerCase()]}
                   </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href={`/${userRole}/settings`}>Settings</Link>
+                <Link href="/settings">Settings</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
@@ -170,7 +190,9 @@ export function DashboardLayout({
         {/* Main Content */}
         <main className="flex-1 overflow-auto">
           <div className="container mx-auto p-6">
-            {children}
+            <DashboardUserProvider user={user} loading={loading} error={error}>
+              {children}
+            </DashboardUserProvider>
           </div>
         </main>
       </div>

@@ -1,12 +1,13 @@
-'use client'
+ 'use client'
 import { useState } from 'react'
+import PublicGuard from '@/components/auth/PublicGuard'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { configureAmplify, signIn } from '@/lib/auth/cognito'
+import { configureAmplify, signIn, getAuthSession } from '@/lib/auth/cognito'
 
 // Configure Amplify on component mount
 configureAmplify()
@@ -14,7 +15,7 @@ configureAmplify()
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || '/client/dashboard'
+  const redirectTo = searchParams.get('redirect') || '/dashboard'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,7 +31,16 @@ export default function LoginPage() {
       const result = await signIn(email, password)
 
       if (result.success) {
-        // Store token in cookie (or handle based on Cognito response)
+        // Get session and set idToken cookie so middleware and AuthProvider detect login
+        try {
+          const sessionResult = await getAuthSession()
+          if (sessionResult.success && sessionResult.session?.tokens?.idToken) {
+            const idToken = sessionResult.session.tokens.idToken.toString()
+            document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=strict`
+          }
+        } catch (err) {
+          // ignore
+        }
         router.push(redirectTo)
       } else {
         setError(result.error || 'Invalid email or password')
@@ -43,7 +53,8 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="w-full shadow-xl border-slate-200 dark:border-slate-700">
+    <PublicGuard>
+      <Card className="w-full shadow-xl border-slate-200 dark:border-slate-700">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
         <CardDescription className="text-center">
@@ -146,6 +157,7 @@ export default function LoginPage() {
           </Button>
         </Link>
       </CardFooter>
-    </Card>
+      </Card>
+    </PublicGuard>
   )
 }

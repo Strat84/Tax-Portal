@@ -79,6 +79,8 @@ export async function signUp(
 export async function signOut() {
   try {
     await amplifySignOut()
+    // Clear the idToken cookie
+    document.cookie = 'idToken=; path=/; max-age=0'
     return { success: true }
   } catch (error: any) {
     console.error('Sign out error:', error)

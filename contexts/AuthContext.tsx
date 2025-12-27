@@ -3,10 +3,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser, signOut as cognitoSignOut, fetchAuthSession } from 'aws-amplify/auth'
-import { createClient } from '@/lib/db/supabase'
+import { extractUserFromToken } from '@/lib/auth/cognito'
+import { client as apolloClient } from '@/lib/apollo/client'
 
 // TEMPORARY: Set to true to bypass authentication for UI testing
-const DEMO_MODE = true
+// Set to false in real environments so AuthProvider performs real authentication
+const DEMO_MODE = false
 
 // Mock users for demo mode - change the role to test different views
 const MOCK_USERS = {
@@ -67,7 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = createClient()
 
   const fetchUser = async () => {
     try {
@@ -83,12 +84,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      // Get current Cognito user
-      const cognitoUser = await getCurrentUser()
+      // If there's no auth token cookie, don't attempt to call Cognito/Supabase.
+      // This avoids hitting Supabase on public pages (login/signup/etc.).
+      const hasIdToken = typeof document !== 'undefined' && /(^|; )idToken=([^;]+)/.test(document.cookie)
+      if (!hasIdToken) {
+        setUser(null)
+        setLoading(false)
+        return
+      }
 
       // Get the session to access tokens
       const session = await fetchAuthSession()
-      const idToken = session.tokens?.idToken?.toString()
+      const idTokenObj = session.tokens?.idToken
+      const idToken = idTokenObj?.toString()
 
       if (!idToken) {
         throw new Error('No authentication token found')
@@ -97,30 +105,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Store token in cookie for middleware
       document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=strict`
 
-      // Fetch user data from PostgreSQL
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('cognito_user_id', cognitoUser.userId)
-        .single()
-
-      if (userError) {
-        console.error('Error fetching user from database:', userError)
-        throw new Error('Failed to load user data')
-      }
-
-      if (!userData) {
-        throw new Error('User not found in database')
+      // Extract user info from idToken instead of querying Supabase
+      const extracted = extractUserFromToken(idTokenObj)
+      if (!extracted) {
+        throw new Error('Failed to extract user from token')
       }
 
       setUser({
-        id: userData.id,
-        cognitoUserId: userData.cognito_user_id,
-        email: userData.email,
-        name: userData.name || userData.email,
-        role: userData.role,
-        phone: userData.phone,
-        isActive: userData.is_active,
+        id: extracted.cognitoUserId,
+        cognitoUserId: extracted.cognitoUserId,
+        email: extracted.email,
+        name: extracted.name || extracted.email,
+        role: extracted.role as 'admin' | 'tax_pro' | 'client',
+        phone: undefined,
+        isActive: true,
       })
 
       setLoading(false)
@@ -134,9 +132,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleSignOut = async () => {
     try {
+      setLoading(true)
+      setError(null)
+
       // DEMO MODE: Just clear user and redirect
       if (DEMO_MODE) {
         setUser(null)
+        await apolloClient.cache.reset()
+        setLoading(false)
         router.push('/')
         console.log('🎭 DEMO MODE: Signed out')
         return
@@ -147,11 +150,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear cookie
       document.cookie = 'idToken=; path=/; max-age=0'
 
+      // Clear Apollo Client cache to remove old token and cached queries
+      await apolloClient.cache.reset()
+
       setUser(null)
+      setError(null)
+      setLoading(false)
       router.push('/login')
     } catch (err: any) {
       console.error('Error signing out:', err)
-      setError(err.message || 'Failed to sign out')
+      // Still clear user and redirect even on error
+      setUser(null)
+      setLoading(false)
+      document.cookie = 'idToken=; path=/; max-age=0'
+      
+      // Clear Apollo cache even on error
+      await apolloClient.cache.reset()
+      
+      router.push('/login')
     }
   }
 
