@@ -72,11 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = async () => {
     try {
-      setLoading(true)
       setError(null)
 
       // DEMO MODE: Skip authentication and use mock user
       if (DEMO_MODE) {
+        setLoading(true)
         await new Promise(resolve => setTimeout(resolve, 500)) // Simulate loading
         setUser(MOCK_USERS[DEMO_ROLE])
         setLoading(false)
@@ -92,6 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false)
         return
       }
+
+      // Token exists, now check auth - set loading only when actually checking auth
+      setLoading(true)
 
       // Get the session to access tokens
       const session = await fetchAuthSession()

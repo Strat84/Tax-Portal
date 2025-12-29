@@ -57,12 +57,12 @@ export function DashboardLayout({
     client: 'Client',
   }
 
-  if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>
+  // if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>
   if (error) {
     console.log('Error loading user:', error)
     return <div className="flex items-center justify-center h-screen">Error loading user</div>
   }
-  if (!user) return <div className="flex items-center justify-center h-screen">User not found</div>
+  // if (!user) return <div className="flex items-center justify-center h-screen">User not found</div>
 
   // switch (user.role) {
   //   case 'client':
