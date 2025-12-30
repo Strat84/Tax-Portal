@@ -114,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to extract user from token')
       }
 
+      console.log("Extracted user from token:", extracted)
       setUser({
         id: extracted.cognitoUserId,
         cognitoUserId: extracted.cognitoUserId,
@@ -148,10 +149,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      await cognitoSignOut()
+      // Sign out globally to clear all Amplify sessions
+      await cognitoSignOut({ global: true })
 
-      // Clear cookie
+      // Clear all auth cookies
       document.cookie = 'idToken=; path=/; max-age=0'
+      document.cookie = 'amplifyAuthenticatedUser=; path=/; max-age=0'
 
       // Clear Apollo Client cache to remove old token and cached queries
       await apolloClient.cache.reset()
@@ -166,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null)
       setLoading(false)
       document.cookie = 'idToken=; path=/; max-age=0'
+      document.cookie = 'amplifyAuthenticatedUser=; path=/; max-age=0'
       
       // Clear Apollo cache even on error
       await apolloClient.cache.reset()

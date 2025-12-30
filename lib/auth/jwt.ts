@@ -13,8 +13,7 @@ const JWKS = createRemoteJWKSet(new URL(COGNITO_JWKS_URL))
 export async function verifyToken(token: string): Promise<AuthUser | null> {
   try {
     const { payload } = await jwtVerify(token, JWKS, {
-      issuer: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID}`,
-      audience: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID,
+      issuer: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID}`
     })
 
     // Extract user information from token

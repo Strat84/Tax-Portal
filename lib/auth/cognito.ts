@@ -25,6 +25,17 @@ export function configureAmplify() {
  */
 export async function signIn(email: string, password: string) {
   try {
+    // Check if there's already a signed in user and sign them out first
+    try {
+      const user = await getCurrentUser()
+      if (user) {
+        console.log('Existing user found, signing out first...')
+        await amplifySignOut({ global: true })
+      }
+    } catch (err) {
+      // No user signed in, continue
+    }
+
     const result = await amplifySignIn({
       username: email,
       password,
@@ -78,12 +89,18 @@ export async function signUp(
  */
 export async function signOut() {
   try {
-    await amplifySignOut()
+    // Sign out globally to clear all sessions
+    await amplifySignOut({ global: true })
     // Clear the idToken cookie
     document.cookie = 'idToken=; path=/; max-age=0'
+    // Clear all auth-related cookies
+    document.cookie = 'amplifyAuthenticatedUser=; path=/; max-age=0'
     return { success: true }
   } catch (error: any) {
     console.error('Sign out error:', error)
+    // Still clear cookies even if signOut fails
+    document.cookie = 'idToken=; path=/; max-age=0'
+    document.cookie = 'amplifyAuthenticatedUser=; path=/; max-age=0'
     return {
       success: false,
       error: error.message || 'Failed to sign out',

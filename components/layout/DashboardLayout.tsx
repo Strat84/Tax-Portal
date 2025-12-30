@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator'
 import { configureAmplify, signOut } from '@/lib/auth/cognito'
 import { User } from '@/graphql/types/users'
 import { DashboardUserProvider } from '@/contexts/DashboardUserContext'
+import { NotificationBellGeneral } from '@/components/notifications/NotificationBellGeneral'
 
 // Configure Amplify
 configureAmplify()
@@ -51,11 +52,15 @@ export function DashboardLayout({
     router.push('/login')
   }
 
-  const roleLabels: any = {
+  const roleLabels:  Record<string, string>  = {
     admin: 'Administrator',
     tax_pro: 'Tax Professional',
     client: 'Client',
   }
+
+  const getSafeLabel = (role?: string): string => {
+    return role ? (roleLabels[role.toLowerCase()] || role) : 'Not Assigned';
+  };
 
   // if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>
   if (error) {
@@ -125,6 +130,9 @@ export function DashboardLayout({
 
           <div className="flex-1" />
 
+          {/* Notification Bell */}
+          <NotificationBellGeneral />
+
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -142,7 +150,7 @@ export function DashboardLayout({
                   <p className="text-sm font-medium leading-none">{user?.name}</p>
                   <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                   <p className="text-xs leading-none text-muted-foreground mt-1">
-                    {roleLabels[user?.role?.toLowerCase()]}
+                    {getSafeLabel(user?.role)}
                   </p>
                 </div>
               </DropdownMenuLabel>
