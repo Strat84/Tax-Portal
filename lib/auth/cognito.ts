@@ -36,8 +36,11 @@ export async function signIn(email: string, password: string) {
       // No user signed in, continue
     }
 
+    // Normalize email to lowercase for case-insensitive login
+    const normalizedEmail = email.toLowerCase()
+
     const result = await amplifySignIn({
-      username: email,
+      username: normalizedEmail,
       password,
     })
     return { success: true, result }
@@ -113,8 +116,11 @@ export async function signOut() {
  */
 export async function confirmSignUpCode(email: string, code: string) {
   try {
+    // Normalize email to lowercase for case-insensitive confirmation
+    const normalizedEmail = email.toLowerCase()
+
     await confirmSignUp({
-      username: email,
+      username: normalizedEmail,
       confirmationCode: code,
     })
     return { success: true }
@@ -132,8 +138,11 @@ export async function confirmSignUpCode(email: string, code: string) {
  */
 export async function resendVerificationCode(email: string) {
   try {
+    // Normalize email to lowercase for case-insensitive resend
+    const normalizedEmail = email.toLowerCase()
+
     await resendSignUpCode({
-      username: email,
+      username: normalizedEmail,
     })
     return { success: true }
   } catch (error: any) {
@@ -150,8 +159,11 @@ export async function resendVerificationCode(email: string) {
  */
 export async function initiatePasswordReset(email: string) {
   try {
+    // Normalize email to lowercase for case-insensitive password reset
+    const normalizedEmail = email.toLowerCase()
+
     await resetPassword({
-      username: email,
+      username: normalizedEmail,
     })
     return { success: true }
   } catch (error: any) {
@@ -172,8 +184,11 @@ export async function confirmPasswordReset(
   newPassword: string
 ) {
   try {
+    // Normalize email to lowercase for case-insensitive password reset confirmation
+    const normalizedEmail = email.toLowerCase()
+
     await confirmResetPassword({
-      username: email,
+      username: normalizedEmail,
       confirmationCode: code,
       newPassword,
     })
@@ -229,6 +244,6 @@ export function extractUserFromToken(idToken: any) {
     email: payload.email,
     name: payload.name,
     role: payload['custom:role'],
-    assignedTaxProId: payload['custom:assigned_tax_pro_id'],
+    // assignedTaxProId: payload['custom:assigned_tax_pro_id'],
   }
 }

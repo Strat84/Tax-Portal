@@ -14,10 +14,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
-import { configureAmplify, signOut } from '@/lib/auth/cognito'
+import { configureAmplify } from '@/lib/auth/cognito'
 import { User } from '@/graphql/types/users'
 import { DashboardUserProvider } from '@/contexts/DashboardUserContext'
 import { NotificationBellGeneral } from '@/components/notifications/NotificationBellGeneral'
+import StatusControls from '@/components/StatusControls'
+import StatusDot from '@/components/StatusDot'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Configure Amplify
 configureAmplify()
@@ -46,10 +49,10 @@ export function DashboardLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const { userStatus, setManualStatus, signOut: authSignOut } = useAuth()
 
   const handleSignOut = async () => {
-    await signOut()
-    router.push('/login')
+    await authSignOut()
   }
 
   const roleLabels:  Record<string, string>  = {
@@ -142,9 +145,13 @@ export function DashboardLayout({
                     {user?.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
+                {/* Status indicator dot */}
+                <div className="absolute bottom-0 right-0 ring-2 ring-background rounded-full">
+                  <StatusDot status={userStatus} size="sm" />
+                </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuContent className="w-64" align="end" forceMount>
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{user?.name}</p>
@@ -154,6 +161,12 @@ export function DashboardLayout({
                   </p>
                 </div>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {/* Status Controls */}
+              <StatusControls
+                currentStatus={userStatus}
+                onStatusChange={setManualStatus}
+              />
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/settings">Settings</Link>

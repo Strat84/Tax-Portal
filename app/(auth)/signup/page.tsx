@@ -33,6 +33,29 @@ export default function SignupPage() {
     }))
   }
 
+  const validatePhoneNumber = (phone: string): { isValid: boolean; formatted?: string; error?: string } => {
+    if (!phone || phone.trim() === '') {
+      return { isValid: true } // Phone is optional
+    }
+
+    // Remove all non-digit characters
+    const digitsOnly = phone.replace(/\D/g, '')
+
+    // Check if we have exactly 10 digits (US phone number)
+    if (digitsOnly.length !== 10) {
+      return {
+        isValid: false,
+        error: 'Phone number must be 10 digits. Format: (123)456-7890'
+      }
+    }
+
+    // Format to E.164 format for Cognito (+1XXXXXXXXXX)
+    return {
+      isValid: true,
+      formatted: `+1${digitsOnly}`
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -52,12 +75,23 @@ export default function SignupPage() {
       return
     }
 
+    // Validate and format phone number
+    const phoneValidation = validatePhoneNumber(formData.phone)
+    if (!phoneValidation.isValid) {
+      setError(phoneValidation.error || 'Invalid phone number')
+      setIsLoading(false)
+      return
+    }
+
     try {
+      // Normalize email to lowercase for case-insensitive username
+      const normalizedEmail = formData.email.toLowerCase()
+
       const result = await signUp(
-        formData.email,
+        normalizedEmail,
         formData.password,
         formData.name,
-        formData.phone || undefined,
+        phoneValidation.formatted || undefined,
         'CLIENT' // Default role for public signup
       )
 
@@ -65,7 +99,7 @@ export default function SignupPage() {
         setSuccess(true)
         // Redirect to verification page after 2 seconds
         setTimeout(() => {
-          router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`)
+          router.push(`/verify-email?email=${encodeURIComponent(normalizedEmail)}`)
         }, 2000)
       } else {
         setError(result.error || 'Failed to create account')
@@ -163,7 +197,7 @@ export default function SignupPage() {
                 id="phone"
                 name="phone"
                 type="tel"
-                placeholder="+1 (555) 123-4567"
+                placeholder="(123)456-7890"
                 value={formData.phone}
                 onChange={handleChange}
                 disabled={isLoading}

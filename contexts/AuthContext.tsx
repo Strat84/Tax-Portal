@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { getCurrentUser, signOut as cognitoSignOut, fetchAuthSession } from 'aws-amplify/auth'
 import { extractUserFromToken } from '@/lib/auth/cognito'
 import { client as apolloClient } from '@/lib/apollo/client'
+import useUserPresence, { UserStatus } from '@/hooks/useUserPresence'
+import useUserStatus from '@/hooks/useUserStatus'
 
 // TEMPORARY: Set to true to bypass authentication for UI testing
 // Set to false in real environments so AuthProvider performs real authentication
@@ -52,12 +54,15 @@ interface User {
   role: 'admin' | 'tax_pro' | 'client'
   phone?: string
   isActive: boolean
+  status?: UserStatus
 }
 
 interface AuthContextType {
   user: User | null
   loading: boolean
   error: string | null
+  userStatus: UserStatus
+  setManualStatus: (status: UserStatus) => Promise<void>
   refreshUser: () => Promise<void>
   signOut: () => Promise<void>
 }
@@ -68,7 +73,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [manualStatus, setManualStatusState] = useState<UserStatus | null>(null)
   const router = useRouter()
+
+  // Auto-detect presence status
+  const { status: autoStatus } = useUserPresence()
+
+  // GraphQL status sync
+  const { updateUserStatus } = useUserStatus(user?.id)
+
+  // Use manual status if set, otherwise use auto-detected status
+  const currentStatus = manualStatus || autoStatus
 
   const fetchUser = async () => {
     try {
@@ -149,8 +164,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      // Sign out globally to clear all Amplify sessions
-      await cognitoSignOut({ global: true })
+      // Update user status to offline and set isActive to false before signing out
+      if (user?.id) {
+        try {
+          await updateUserStatus('offline', { isActive: false })
+          console.log('User status updated to offline and isActive set to false before logout')
+        } catch (err) {
+          console.error('Failed to update user status before logout:', err)
+          // Continue with logout even if status update fails
+        }
+      }
+
+      // Sign out locally (not globally to avoid invalidating the session during status update)
+      await cognitoSignOut()
 
       // Clear all auth cookies
       document.cookie = 'idToken=; path=/; max-age=0'
@@ -170,10 +196,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
       document.cookie = 'idToken=; path=/; max-age=0'
       document.cookie = 'amplifyAuthenticatedUser=; path=/; max-age=0'
-      
+
       // Clear Apollo cache even on error
       await apolloClient.cache.reset()
-      
+
       router.push('/login')
     }
   }
@@ -182,10 +208,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUser()
   }, [])
 
+  // Sync status with backend when it changes
+  useEffect(() => {
+    if (user?.id && currentStatus) {
+      updateUserStatus(currentStatus).catch(err => {
+        console.error('Failed to sync status with backend:', err)
+      })
+    }
+  }, [currentStatus, user?.id])
+
+  // Function to manually set status
+  const setManualStatus = async (status: UserStatus) => {
+    setManualStatusState(status)
+    if (user?.id) {
+      try {
+        await updateUserStatus(status)
+      } catch (err) {
+        console.error('Failed to update manual status:', err)
+        throw err
+      }
+    }
+  }
+
   const value = {
     user,
     loading,
     error,
+    userStatus: currentStatus,
+    setManualStatus,
     refreshUser: fetchUser,
     signOut: handleSignOut,
   }

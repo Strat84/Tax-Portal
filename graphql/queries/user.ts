@@ -8,9 +8,11 @@ export const GET_CURRENT_USER = gql`
         id
         isActive
         lastLogin
+        lastActiveAt
         name
         phone
         role
+        status
         updatedAt
     }
   }
@@ -24,11 +26,23 @@ export const UPDATE_USER_PROFILE = gql`
       id
       isActive
       lastLogin
+      lastActiveAt
       name
       phone
       role
+      status
       updatedAt
     }
   }
 `
 
+export const SUBSCRIBE_USER_STATUS = gql`
+  subscription onUpdateUser($id: ID!) {
+    onUpdateUser(id: $id) {
+      id
+      status
+      lastActiveAt
+      updatedAt
+    }
+  }
+`
