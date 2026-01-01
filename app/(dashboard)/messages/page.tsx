@@ -16,6 +16,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import UserStatusBadge from '@/components/UserStatusBadge'
+import { UserStatus } from '@/graphql/types/users'
 
 export default function ClientMessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>('1')
@@ -33,6 +35,7 @@ export default function ClientMessagesPage() {
       lastMessageTime: '10 minutes ago',
       unreadCount: 2,
       isActive: true,
+      status: 'online' as UserStatus,
     },
     {
       id: '2',
@@ -42,6 +45,7 @@ export default function ClientMessagesPage() {
       lastMessageTime: '2 days ago',
       unreadCount: 0,
       isActive: false,
+      status: 'offline' as UserStatus,
     },
   ]
 
@@ -210,11 +214,13 @@ export default function ClientMessagesPage() {
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <Avatar>
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {conv.taxProInitials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserStatusBadge
+                      user={{
+                        name: conv.taxProName,
+                        status: conv.status,
+                      }}
+                      size="md"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <p className="font-semibold text-sm truncate">
@@ -251,16 +257,17 @@ export default function ClientMessagesPage() {
           <Card className="flex flex-col">
             <CardHeader className="border-b">
               <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {selectedConv.taxProInitials}
-                  </AvatarFallback>
-                </Avatar>
+                <UserStatusBadge
+                  user={{
+                    name: selectedConv.taxProName,
+                    status: selectedConv.status,
+                  }}
+                  size="lg"
+                />
                 <div>
                   <CardTitle className="text-lg">{selectedConv.taxProName}</CardTitle>
-                  <CardDescription className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-green-500" />
-                    Active
+                  <CardDescription className="capitalize">
+                    {selectedConv.status}
                   </CardDescription>
                 </div>
               </div>

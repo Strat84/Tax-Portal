@@ -44,14 +44,22 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('idToken')?.value ||
                 request.headers.get('authorization')?.replace('Bearer ', '')
 
-  console.log("token:", token)
+  console.log("check token in middleware:")
   // If user hits a public/auth route and already has a valid token, redirect to dashboard
   let verifiedUser = null
   if (token) {
     verifiedUser = await verifyToken(token)
   }
 
-  if (PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith(route))) {
+  // Check if current path is a public route
+  const isPublicRoute = PUBLIC_ROUTES.some(route => {
+    if (route === '/') {
+      return pathname === '/' // Exact match for home page only
+    }
+    return pathname === route || pathname.startsWith(route + '/')
+  })
+
+  if (isPublicRoute) {
     if (verifiedUser) {
       // already authenticated -> send to dashboard
       const to = new URL('/dashboard', request.url)
