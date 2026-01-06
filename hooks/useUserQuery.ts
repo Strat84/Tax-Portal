@@ -1,17 +1,41 @@
 'use client'
 
-import { useQuery, useMutation } from '@apollo/client'
+import { gqlClient } from '@/lib/appsync/client'
 import { GET_CURRENT_USER, UPDATE_USER_PROFILE } from '@/graphql/queries/user'
 import { User } from '@/graphql/types/users'
+import { useEffect, useState } from 'react'
 
 // Hook for getting current user
 export default function useCurrentUser() {
-  const { data, loading, error, refetch } = useQuery(GET_CURRENT_USER, {
-    fetchPolicy: 'cache-and-network', // Fresh data ke liye
-    onError: (error) => {
-      console.error('Error fetching current user:', error)
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<any>(null)
+
+  const fetchUser = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await gqlClient.graphql({
+        query: GET_CURRENT_USER
+      })
+      setData(result.data)
+      setLoading(false)
+      return result.data
+    } catch (err) {
+      setError(err)
+      setLoading(false)
+      throw err
     }
-  })
+  }
+
+  // Initial fetch
+  useEffect(() => {
+    fetchUser()
+  }, [])
+
+  const refetch = async () => {
+    return await fetchUser()
+  }
 
   return {
     user: data?.getUser as User,
@@ -22,37 +46,30 @@ export default function useCurrentUser() {
 }
 
 export function useUpdateUserProfile() {
-  const [updateUserProfileMutation, { data, loading, error }] = useMutation(UPDATE_USER_PROFILE, {
-    onError: (error) => {
-      console.error('Error updating user profile:', error)
-    }
-  })
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<any>(null)
 
   const updateProfile = async (input: {
     name?: string
     phone?: string
     profile?: Record<string, any>
   }) => {
+    setLoading(true)
+    setError(null)
+    
     try {
-      const result = await updateUserProfileMutation({
-        variables: { input },
-        update: (cache, { data }) => {
-          if (data?.updateUser) {
-            try {
-              cache.writeQuery({
-                query: GET_CURRENT_USER,
-                data: { getUser: data.updateUser }
-              })
-            } catch (err) {
-              // ignore cache write errors
-              console.warn('Cache write failed for updateUserProfile', err)
-            }
-          }
-        }
+      const result = await gqlClient.graphql({
+        query: UPDATE_USER_PROFILE,
+        variables: { input }
       })
 
+      setData(result.data)
+      setLoading(false)
       return result.data?.updateUser
     } catch (err) {
+      setError(err)
+      setLoading(false)
       throw err
     }
   }
