@@ -21,7 +21,7 @@ export async function verifyToken(token: string): Promise<AuthUser | null> {
       cognitoUserId: payload.sub as string,
       email: payload.email as string,
       name: payload.name as string,
-      role: payload['custom:role'] as 'admin' | 'tax_pro' | 'client',
+      role: payload['custom:role'] as 'ADMIN' | 'TAX_PRO' | 'CLIENT',
       assignedTaxProId: payload['custom:assigned_tax_pro_id'] as string | undefined,
     }
   } catch (error) {

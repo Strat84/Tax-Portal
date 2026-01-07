@@ -1,6 +1,5 @@
-import { gql } from '@apollo/client'
 
-export const GET_CURRENT_USER = gql`
+export const GET_CURRENT_USER = `
   query getUser {
     getUser {
         createdAt
@@ -18,7 +17,7 @@ export const GET_CURRENT_USER = gql`
   }
 `
 
-export const UPDATE_USER_PROFILE = gql`
+export const UPDATE_USER_PROFILE = `
   mutation updateUser($input: UpdateUserInput!) {
     updateUser(input: $input) {
       createdAt
@@ -36,7 +35,7 @@ export const UPDATE_USER_PROFILE = gql`
   }
 `
 
-export const SUBSCRIBE_USER_STATUS = gql`
+export const SUBSCRIBE_USER_STATUS = `
   subscription onUpdateUser($id: ID!) {
     onUpdateUser(id: $id) {
       id

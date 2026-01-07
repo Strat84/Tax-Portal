@@ -18,7 +18,7 @@ export default function SignupPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
+    phone: '+1 ',
     password: '',
     confirmPassword: '',
   })
@@ -26,35 +26,87 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
-  }
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { name, value } = e.target
 
-  const validatePhoneNumber = (phone: string): { isValid: boolean; formatted?: string; error?: string } => {
-    if (!phone || phone.trim() === '') {
-      return { isValid: true } // Phone is optional
+  // Special handling for phone field
+  if (name === 'phone') {
+    // Ensure it always starts with +1
+    if (!value.startsWith('+1')) {
+      // If user deletes +1, add it back
+      setFormData(prev => ({
+        ...prev,
+        phone: '+1 '
+      }))
+      return
     }
 
-    // Remove all non-digit characters
-    const digitsOnly = phone.replace(/\D/g, '')
+    // Remove all non-digit characters except leading +1
+    const withoutPlusOne = value.substring(2) // Remove '+1'
+    const digitsOnly = withoutPlusOne.replace(/\D/g, '')
 
-    // Check if we have exactly 10 digits (US phone number)
-    if (digitsOnly.length !== 10) {
-      return {
-        isValid: false,
-        error: 'Phone number must be 10 digits. Format: (123)456-7890'
+    // Keep only 10 digits after +1
+    const limitedDigits = digitsOnly.substring(0, 10)
+
+    // Format as +1 (XXX) XXX-XXXX
+    let formattedPhone = '+1 '
+
+    if (limitedDigits.length > 0) {
+      formattedPhone += '('
+      formattedPhone += limitedDigits.substring(0, 3) // First 3 digits
+
+      if (limitedDigits.length > 3) {
+        formattedPhone += ') '
+        formattedPhone += limitedDigits.substring(3, 6) // Next 3 digits
+
+        if (limitedDigits.length > 6) {
+          formattedPhone += '-'
+          formattedPhone += limitedDigits.substring(6, 10) // Last 4 digits
+        }
       }
     }
 
-    // Format to E.164 format for Cognito (+1XXXXXXXXXX)
+    setFormData(prev => ({
+      ...prev,
+      phone: formattedPhone
+    }))
+  } else {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+}
+ const validatePhoneNumber = (phone: string): { isValid: boolean; formatted?: string; error?: string } => {
+  if (!phone || phone === '+1 ' || phone === '+1') {
+    return { isValid: true } // Phone is optional
+  }
+
+  // Check if it starts with +1
+  if (!phone.startsWith('+1')) {
     return {
-      isValid: true,
-      formatted: `+1${digitsOnly}`
+      isValid: false,
+      error: 'Phone number must start with +1'
     }
   }
+
+  // Get digits after +1 (removing all non-digits)
+  const digitsAfterPlusOne = phone.substring(2).replace(/\D/g, '')
+
+  // Check if we have exactly 10 digits after +1
+  if (digitsAfterPlusOne.length !== 10) {
+    return {
+      isValid: false,
+      error: 'Please enter exactly 10 digits. Example: +1 (123) 456-7890'
+    }
+  }
+
+  // Format to E.164 format for Cognito (+1XXXXXXXXXX)
+  return {
+    isValid: true,
+    formatted: `+1${digitsAfterPlusOne}`
+  }
+}
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -197,7 +249,7 @@ export default function SignupPage() {
                 id="phone"
                 name="phone"
                 type="tel"
-                placeholder="(123)456-7890"
+                placeholder="+1 (787) 878-7878"
                 value={formData.phone}
                 onChange={handleChange}
                 disabled={isLoading}

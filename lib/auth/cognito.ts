@@ -1,4 +1,4 @@
-import { Amplify } from 'aws-amplify'
+import { Amplify } from "aws-amplify";
 import {
   signIn as amplifySignIn,
   signUp as amplifySignUp,
@@ -12,12 +12,20 @@ import {
   FetchAuthSessionOptions,
   SignInInput,
   SignUpInput,
-} from 'aws-amplify/auth'
-import awsConfig from "../../src/amplifyconfiguration.json"
+} from "aws-amplify/auth";
+import awsConfig from "../../src/amplifyconfiguration.json";
+
+const customConfig = {
+  aws_appsync_graphqlEndpoint:
+  process.env.NEXT_PUBLIC_GRAPHQL_API_URL,
+  aws_appsync_region: process.env.NEXT_PUBLIC_AWS_REGION,
+  aws_appsync_authenticationType: "AMAZON_COGNITO_USER_POOLS",
+  aws_appsync_apiKey: process.env.NEXT_PUBLIC_API_KEY,
+};
 
 // Configure Amplify with Cognito settings
 export function configureAmplify() {
-  Amplify.configure(awsConfig)
+  Amplify.configure({ ...awsConfig, ...customConfig });
 }
 
 /**
@@ -27,29 +35,28 @@ export async function signIn(email: string, password: string) {
   try {
     // Check if there's already a signed in user and sign them out first
     try {
-      const user = await getCurrentUser()
+      const user = await getCurrentUser();
       if (user) {
-        console.log('Existing user found, signing out first...')
-        await amplifySignOut({ global: true })
+        await amplifySignOut({ global: true });
       }
     } catch (err) {
       // No user signed in, continue
     }
 
     // Normalize email to lowercase for case-insensitive login
-    const normalizedEmail = email.toLowerCase()
+    const normalizedEmail = email;
 
     const result = await amplifySignIn({
       username: normalizedEmail,
       password,
-    })
-    return { success: true, result }
+    });
+    return { success: true, result };
   } catch (error: any) {
-    console.error('Sign in error:', error)
+    console.error("Sign in error:", error);
     return {
       success: false,
-      error: error.message || 'Failed to sign in',
-    }
+      error: error.message || "Failed to sign in",
+    };
   }
 }
 
@@ -61,7 +68,7 @@ export async function signUp(
   password: string,
   name: string,
   phone?: string,
-  role: 'ADMIN' | 'TAX_PRO' | 'CLIENT' = 'CLIENT'
+  role: "ADMIN" | "TAX_PRO" | "CLIENT" = "CLIENT"
 ) {
   try {
     const result = await amplifySignUp({
@@ -72,18 +79,18 @@ export async function signUp(
           email,
           name,
           ...(phone && { phone_number: phone }),
-          'custom:role': role,
+          "custom:role": role,
         },
         autoSignIn: true,
       },
-    })
-    return { success: true, result }
+    });
+    return { success: true, result };
   } catch (error: any) {
-    console.error('Sign up error:', error)
+    console.error("Sign up error:", error);
     return {
       success: false,
-      error: error.message || 'Failed to sign up',
-    }
+      error: error.message || "Failed to sign up",
+    };
   }
 }
 
@@ -93,21 +100,21 @@ export async function signUp(
 export async function signOut() {
   try {
     // Sign out globally to clear all sessions
-    await amplifySignOut({ global: true })
+    await amplifySignOut({ global: true });
     // Clear the idToken cookie
-    document.cookie = 'idToken=; path=/; max-age=0'
+    document.cookie = "idToken=; path=/; max-age=0";
     // Clear all auth-related cookies
-    document.cookie = 'amplifyAuthenticatedUser=; path=/; max-age=0'
-    return { success: true }
+    document.cookie = "amplifyAuthenticatedUser=; path=/; max-age=0";
+    return { success: true };
   } catch (error: any) {
-    console.error('Sign out error:', error)
+    console.error("Sign out error:", error);
     // Still clear cookies even if signOut fails
-    document.cookie = 'idToken=; path=/; max-age=0'
-    document.cookie = 'amplifyAuthenticatedUser=; path=/; max-age=0'
+    document.cookie = "idToken=; path=/; max-age=0";
+    document.cookie = "amplifyAuthenticatedUser=; path=/; max-age=0";
     return {
       success: false,
-      error: error.message || 'Failed to sign out',
-    }
+      error: error.message || "Failed to sign out",
+    };
   }
 }
 
@@ -117,19 +124,19 @@ export async function signOut() {
 export async function confirmSignUpCode(email: string, code: string) {
   try {
     // Normalize email to lowercase for case-insensitive confirmation
-    const normalizedEmail = email.toLowerCase()
+    const normalizedEmail = email.toLowerCase();
 
     await confirmSignUp({
       username: normalizedEmail,
       confirmationCode: code,
-    })
-    return { success: true }
+    });
+    return { success: true };
   } catch (error: any) {
-    console.error('Confirmation error:', error)
+    console.error("Confirmation error:", error);
     return {
       success: false,
-      error: error.message || 'Failed to confirm sign up',
-    }
+      error: error.message || "Failed to confirm sign up",
+    };
   }
 }
 
@@ -139,18 +146,18 @@ export async function confirmSignUpCode(email: string, code: string) {
 export async function resendVerificationCode(email: string) {
   try {
     // Normalize email to lowercase for case-insensitive resend
-    const normalizedEmail = email.toLowerCase()
+    const normalizedEmail = email.toLowerCase();
 
     await resendSignUpCode({
       username: normalizedEmail,
-    })
-    return { success: true }
+    });
+    return { success: true };
   } catch (error: any) {
-    console.error('Resend code error:', error)
+    console.error("Resend code error:", error);
     return {
       success: false,
-      error: error.message || 'Failed to resend code',
-    }
+      error: error.message || "Failed to resend code",
+    };
   }
 }
 
@@ -160,18 +167,18 @@ export async function resendVerificationCode(email: string) {
 export async function initiatePasswordReset(email: string) {
   try {
     // Normalize email to lowercase for case-insensitive password reset
-    const normalizedEmail = email.toLowerCase()
+    const normalizedEmail = email.toLowerCase();
 
     await resetPassword({
       username: normalizedEmail,
-    })
-    return { success: true }
+    });
+    return { success: true };
   } catch (error: any) {
-    console.error('Password reset error:', error)
+    console.error("Password reset error:", error);
     return {
       success: false,
-      error: error.message || 'Failed to initiate password reset',
-    }
+      error: error.message || "Failed to initiate password reset",
+    };
   }
 }
 
@@ -185,20 +192,20 @@ export async function confirmPasswordReset(
 ) {
   try {
     // Normalize email to lowercase for case-insensitive password reset confirmation
-    const normalizedEmail = email.toLowerCase()
+    const normalizedEmail = email.toLowerCase();
 
     await confirmResetPassword({
       username: normalizedEmail,
       confirmationCode: code,
       newPassword,
-    })
-    return { success: true }
+    });
+    return { success: true };
   } catch (error: any) {
-    console.error('Confirm password reset error:', error)
+    console.error("Confirm password reset error:", error);
     return {
       success: false,
-      error: error.message || 'Failed to reset password',
-    }
+      error: error.message || "Failed to reset password",
+    };
   }
 }
 
@@ -207,10 +214,10 @@ export async function confirmPasswordReset(
  */
 export async function getAuthenticatedUser() {
   try {
-    const user = await getCurrentUser()
-    return { success: true, user }
+    const user = await getCurrentUser();
+    return { success: true, user };
   } catch (error) {
-    return { success: false, user: null }
+    return { success: false, user: null };
   }
 }
 
@@ -219,14 +226,14 @@ export async function getAuthenticatedUser() {
  */
 export async function getAuthSession(options?: FetchAuthSessionOptions) {
   try {
-    const session = await fetchAuthSession(options)
-    return { success: true, session }
+    const session = await fetchAuthSession(options);
+    return { success: true, session };
   } catch (error: any) {
-    console.error('Get session error:', error)
+    console.error("Get session error:", error);
     return {
       success: false,
-      error: error.message || 'Failed to get session',
-    }
+      error: error.message || "Failed to get session",
+    };
   }
 }
 
@@ -235,15 +242,15 @@ export async function getAuthSession(options?: FetchAuthSessionOptions) {
  */
 export function extractUserFromToken(idToken: any) {
   if (!idToken || !idToken.payload) {
-    return null
+    return null;
   }
 
-  const payload = idToken.payload
+  const payload = idToken.payload;
   return {
     cognitoUserId: payload.sub,
     email: payload.email,
     name: payload.name,
-    role: payload['custom:role'],
+    role: payload["custom:role"],
     // assignedTaxProId: payload['custom:assigned_tax_pro_id'],
-  }
+  };
 }
