@@ -4,7 +4,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { useRouter } from 'next/navigation'
 import { getCurrentUser, signOut as cognitoSignOut, fetchAuthSession } from 'aws-amplify/auth'
 import { extractUserFromToken } from '@/lib/auth/cognito'
-import { client as apolloClient } from '@/lib/apollo/client'
+import { gqlClient } from '@/lib/appsync/client'
+import { GET_CURRENT_USER } from '@/graphql/queries/user'
 import useUserPresence, { UserStatus } from '@/hooks/useUserPresence'
 import useUserStatus from '@/hooks/useUserStatus'
 
@@ -95,12 +96,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await new Promise(resolve => setTimeout(resolve, 500)) // Simulate loading
         setUser(MOCK_USERS[DEMO_ROLE])
         setLoading(false)
-        console.log('🎭 DEMO MODE: Logged in as', DEMO_ROLE, '-', MOCK_USERS[DEMO_ROLE].name)
         return
       }
 
-      // If there's no auth token cookie, don't attempt to call Cognito/Supabase.
-      // This avoids hitting Supabase on public pages (login/signup/etc.).
+      // If there's no auth token cookie, don't attempt to call Cognito
       const hasIdToken = typeof document !== 'undefined' && /(^|; )idToken=([^;]+)/.test(document.cookie)
       if (!hasIdToken) {
         setUser(null)
@@ -123,22 +122,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Store token in cookie for middleware
       document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=strict`
 
-      // Extract user info from idToken instead of querying Supabase
+      // Extract basic user info from idToken
       const extracted = extractUserFromToken(idTokenObj)
       if (!extracted) {
         throw new Error('Failed to extract user from token')
       }
 
-      console.log("Extracted user from token:", extracted)
-      setUser({
-        id: extracted.cognitoUserId,
-        cognitoUserId: extracted.cognitoUserId,
-        email: extracted.email,
-        name: extracted.name || extracted.email,
-        role: extracted.role as 'admin' | 'tax_pro' | 'client',
-        phone: undefined,
-        isActive: true,
-      })
+
+      // Fetch complete user profile from GraphQL
+      try {
+        const result = await gqlClient.graphql({
+          query: GET_CURRENT_USER
+        })
+
+        const userData = result.data?.getUser
+        if (userData) {
+          setUser({
+            id: userData.id,
+            cognitoUserId: extracted.cognitoUserId,
+            email: userData.email,
+            name: userData.name || extracted.name || userData.email,
+            role: userData.role.toLowerCase() as 'admin' | 'tax_pro' | 'client',
+            phone: userData.phone,
+            isActive: userData.isActive,
+            status: userData.status as UserStatus,
+          })
+        } else {
+          // Fallback to token data if GraphQL fails
+          setUser({
+            id: extracted.cognitoUserId,
+            cognitoUserId: extracted.cognitoUserId,
+            email: extracted.email,
+            name: extracted.name || extracted.email,
+            role: extracted.role as 'admin' | 'tax_pro' | 'client',
+            phone: undefined,
+            isActive: true,
+          })
+        }
+      } catch (gqlError) {
+        console.error('Error fetching user from GraphQL:', gqlError)
+        // Fallback to token data if GraphQL fails
+        setUser({
+          id: extracted.cognitoUserId,
+          cognitoUserId: extracted.cognitoUserId,
+          email: extracted.email,
+          name: extracted.name || extracted.email,
+          role: extracted.role as 'admin' | 'tax_pro' | 'client',
+          phone: undefined,
+          isActive: true,
+        })
+      }
 
       setLoading(false)
     } catch (err: any) {
@@ -157,10 +190,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // DEMO MODE: Just clear user and redirect
       if (DEMO_MODE) {
         setUser(null)
-        await apolloClient.cache.reset()
         setLoading(false)
         router.push('/')
-        console.log('🎭 DEMO MODE: Signed out')
         return
       }
 
@@ -168,9 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user?.id) {
         try {
           await updateUserStatus('offline', { isActive: false })
-          console.log('User status updated to offline and isActive set to false before logout')
         } catch (err) {
-          console.error('Failed to update user status before logout:', err)
           // Continue with logout even if status update fails
         }
       }
@@ -181,9 +210,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear all auth cookies
       document.cookie = 'idToken=; path=/; max-age=0'
       document.cookie = 'amplifyAuthenticatedUser=; path=/; max-age=0'
-
-      // Clear Apollo Client cache to remove old token and cached queries
-      await apolloClient.cache.reset()
 
       setUser(null)
       setError(null)
@@ -196,9 +222,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
       document.cookie = 'idToken=; path=/; max-age=0'
       document.cookie = 'amplifyAuthenticatedUser=; path=/; max-age=0'
-
-      // Clear Apollo cache even on error
-      await apolloClient.cache.reset()
 
       router.push('/login')
     }
@@ -215,19 +238,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Failed to sync status with backend:', err)
       })
     }
-  }, [currentStatus, user?.id])
+  }, [currentStatus, user?.id, updateUserStatus])
 
-  // Function to manually set status
+  // Function to manually set status - just sets local state, useEffect handles backend sync
   const setManualStatus = async (status: UserStatus) => {
     setManualStatusState(status)
-    if (user?.id) {
-      try {
-        await updateUserStatus(status)
-      } catch (err) {
-        console.error('Failed to update manual status:', err)
-        throw err
-      }
-    }
   }
 
   const value = {

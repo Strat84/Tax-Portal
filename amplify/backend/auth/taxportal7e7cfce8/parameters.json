@@ -1,6 +1,6 @@
 {
-  "authSelections": "userPoolOnly",
-  "resourceName": "taxportal6c03c566",
+  "authSelections": "identityPoolAndUserPool",
+  "resourceName": "taxportal7e7cfce8",
   "serviceType": "imported",
   "region": "us-west-1",
   "usernameAttributes": [

@@ -1,6 +1,7 @@
 {
+  "api": {},
   "auth": {
-    "taxportal6c03c566": {
+    "taxportal7e7cfce8": {
       "customAuth": false,
       "dependsOn": [],
       "providerPlugin": "awscloudformation",
@@ -9,37 +10,117 @@
     }
   },
   "parameters": {
-    "AMPLIFY_auth_taxportal6c03c566_nativeClientId": {
+    "AMPLIFY_auth_taxportal7e7cfce8_allowUnauthenticatedIdentities": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal6c03c566"
+          "resourceName": "taxportal7e7cfce8"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal6c03c566_userPoolId": {
+    "AMPLIFY_auth_taxportal7e7cfce8_authRoleArn": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal6c03c566"
+          "resourceName": "taxportal7e7cfce8"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal6c03c566_userPoolName": {
+    "AMPLIFY_auth_taxportal7e7cfce8_authRoleName": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal6c03c566"
+          "resourceName": "taxportal7e7cfce8"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal6c03c566_webClientId": {
+    "AMPLIFY_auth_taxportal7e7cfce8_identityPoolId": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal6c03c566"
+          "resourceName": "taxportal7e7cfce8"
         }
       ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_identityPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_nativeClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_unauthRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_unauthRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_userPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_userPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_webClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_storage_taxportalc3dfd38a_bucketName": {
+      "usedBy": [
+        {
+          "category": "storage",
+          "resourceName": "taxportalc3dfd38a"
+        }
+      ]
+    },
+    "AMPLIFY_storage_taxportalc3dfd38a_region": {
+      "usedBy": [
+        {
+          "category": "storage",
+          "resourceName": "taxportalc3dfd38a"
+        }
+      ]
+    }
+  },
+  "storage": {
+    "taxportalc3dfd38a": {
+      "dependsOn": [],
+      "providerPlugin": "awscloudformation",
+      "service": "S3",
+      "serviceType": "imported"
     }
   }
 }

@@ -8,7 +8,7 @@ export interface User {
   lastActiveAt?: string
   name: string
   phone : string
-  role: 'admin' | 'tax_pro' | 'client'
+  role: 'ADMIN' | 'TAX_PRO' | 'CLIENT'
   status?: UserStatus
   createdAt : string
   updatedAt : string
