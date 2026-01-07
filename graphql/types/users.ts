@@ -13,3 +13,12 @@ export interface User {
   createdAt : string
   updatedAt : string
 }
+
+// GraphQL Response Types
+export interface GetUserResponse {
+  getUser: User
+}
+
+export interface UpdateUserResponse {
+  updateUser: User
+}

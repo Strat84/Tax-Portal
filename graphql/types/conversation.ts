@@ -19,3 +19,7 @@ export interface Conversation {
 export interface GetConversationsResponse {
   getConversations: Conversation[]
 }
+
+export interface UpdateConversationResponse {
+  updateConversation: Conversation
+}

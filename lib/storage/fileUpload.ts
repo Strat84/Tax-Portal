@@ -73,11 +73,11 @@ export const uploadFileToS3 = async (
       options: {
         contentType: file.type,
         onProgress: (event) => {
-          if (onProgress && event.total) {
+          if (onProgress && event.totalBytes) {
             const progress: UploadProgress = {
-              loaded: event.loaded,
-              total: event.total,
-              percentage: Math.round((event.loaded / event.total) * 100),
+              loaded: event.transferredBytes || 0,
+              total: event.totalBytes || 0,
+              percentage: event.totalBytes ? Math.round(((event.transferredBytes || 0) / event.totalBytes) * 100) : 0,
             };
             onProgress(progress);
           }

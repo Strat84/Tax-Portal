@@ -37,3 +37,7 @@ export interface GetMessagesResponse {
     nextToken: string | null
   }
 }
+
+export interface CreateMessageResponse {
+  createMessage: Message
+}

@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { gqlClient } from '@/lib/appsync/client'
 import { GET_CONVERSATIONS } from '@/graphql/queries/conversation'
 import { UPDATE_CONVERSATION } from '@/graphql/mutation/conversation'
-import { Conversation } from '@/graphql/types/conversation'
+import { Conversation, GetConversationsResponse, UpdateConversationResponse } from '@/graphql/types/conversation'
+import { GraphQLResult } from '@aws-amplify/api-graphql'
 
 interface UpdateConversationInput {
   PK: string
@@ -26,7 +27,7 @@ export default function useConversations() {
     try {
       const result = await gqlClient.graphql({
         query: GET_CONVERSATIONS
-      })
+      }) as GraphQLResult<GetConversationsResponse>
 
       setConversations(result.data?.getConversations || [])
       setLoading(false)
@@ -59,7 +60,7 @@ export default function useConversations() {
       const result = await gqlClient.graphql({
         query: UPDATE_CONVERSATION,
         variables: { input }
-      })
+      }) as GraphQLResult<UpdateConversationResponse>
 
       // Update with actual server response
       setConversations(prev =>

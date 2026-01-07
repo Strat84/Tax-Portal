@@ -479,7 +479,7 @@ export default function ClientMessagesPage() {
                     <UserStatusBadge
                       user={{
                         name: conv.taxProName,
-                        status: conv.status,
+                        status: conv.status ?? 'offline',
                       }}
                       size="md"
                     />
@@ -517,14 +517,14 @@ export default function ClientMessagesPage() {
                 <UserStatusBadge
                   user={{
                     name: selectedConv.taxProName,
-                    status: selectedConv.status,
+                    status: selectedConv.status ?? 'offline',
                   }}
                   size="lg"
                 />
                 <div>
                   <CardTitle className="text-lg">{selectedConv.taxProName}</CardTitle>
                   <CardDescription className="capitalize">
-                    {selectedConv.status}
+                    {selectedConv.status ?? 'offline'}
                   </CardDescription>
                 </div>
               </div>
