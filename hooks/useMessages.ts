@@ -172,7 +172,7 @@ interface CreateMessageInput {
   conversationId: string
   isSeenStatus: 'SEEN' | 'UNSEEN'
   receiverId: string
-  messageType: 'TEXT' | 'FILE'
+  messageType: 'TEXT' | 'IMAGE'
   senderId: string
   timestamp: string
 }

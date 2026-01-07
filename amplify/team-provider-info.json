@@ -12,18 +12,25 @@
       "AmplifyAppId": "d2kj6uty2pytqf"
     },
     "categories": {
-      "auth": {
-        "taxportal78403086": {
-          "userPoolId": "us-west-1_PxwkFeOJF",
-          "userPoolName": "unitedtax-dev-pool",
-          "webClientId": "4n7snq16olic7mslk8fith6srm",
-          "nativeClientId": "4n7snq16olic7mslk8fith6srm"
-        }
-      },
       "storage": {
         "taxportalc3dfd38a": {
           "bucketName": "unitedtax-dev-uploads",
           "region": "us-west-1"
+        }
+      },
+      "auth": {
+        "taxportal7e7cfce8": {
+          "userPoolId": "us-west-1_PxwkFeOJF",
+          "userPoolName": "unitedtax-dev-pool",
+          "webClientId": "4n7snq16olic7mslk8fith6srm",
+          "nativeClientId": "4n7snq16olic7mslk8fith6srm",
+          "identityPoolId": "us-west-1:f0c5fd22-138a-41ea-be28-99669710b5c9",
+          "identityPoolName": "unitedtax-dev-idpool",
+          "allowUnauthenticatedIdentities": false,
+          "authRoleArn": "arn:aws:iam::423623826179:role/unitedtax-dev-auth-role",
+          "authRoleName": "unitedtax-dev-auth-role",
+          "unauthRoleArn": "arn:aws:iam::423623826179:role/unitedtax-dev-unauth-role",
+          "unauthRoleName": "unitedtax-dev-unauth-role"
         }
       }
     }
