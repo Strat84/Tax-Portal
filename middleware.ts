@@ -71,7 +71,10 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     // No token, redirect to login
     const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('redirect', pathname)
+    if (!pathname.startsWith('/login')) {
+      loginUrl.searchParams.set('redirect', pathname)
+    }
+    
     return NextResponse.redirect(loginUrl)
   }
 
