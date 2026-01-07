@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { UPDATE_USER_PROFILE, SUBSCRIBE_USER_STATUS } from '@/graphql/queries/user'
-import { UserStatus } from '@/graphql/types/users'
+import { UserStatus, UpdateUserResponse } from '@/graphql/types/users'
 import { gqlClient } from '@/lib/appsync/client'
+import { GraphQLResult } from '@aws-amplify/api-graphql'
 
 /**
  * Hook for GraphQL integration of user status
@@ -35,7 +36,7 @@ export default function useUserStatus(userId?: string) {
             ...(additionalFields?.isActive !== undefined && { isActive: additionalFields.isActive })
           }
         }
-      })
+      }) as GraphQLResult<UpdateUserResponse>
 
       setLoading(false)
       return result.data?.updateUser
@@ -57,16 +58,16 @@ export default function useUserStatus(userId?: string) {
     }
 
     // Create new subscription
-    subscriptionRef.current = gqlClient
+    subscriptionRef.current = (gqlClient
       .graphql({
         query: SUBSCRIBE_USER_STATUS,
         variables: { id: userId }
-      })
+      }) as any)
       .subscribe({
-        next: ({ data }) => {
+        next: ({ data }: any) => {
           setSubscriptionData(data?.onUpdateUser)
         },
-        error: (err) => {
+        error: (err: any) => {
           console.error('Subscription error:', err)
           setError(err)
         }

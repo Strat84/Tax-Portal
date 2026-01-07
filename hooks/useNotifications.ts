@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useConversations } from '@/hooks/useMessages'
+import useConversations from '@/hooks/useConversations'
 import { MessageNotification, NotificationStats } from '@/types/notifications'
 
 export function useNotifications() {
   const { user } = useAuth()
-  const { conversations, loading, refetch } = useConversations(user?.id || null, user?.role || null)
+  const { conversations, loading, refetch } = useConversations()
   const [notifications, setNotifications] = useState<MessageNotification[]>([])
   const [stats, setStats] = useState<NotificationStats>({
     totalUnread: 0,
@@ -22,26 +22,27 @@ export function useNotifications() {
     if (conversations && conversations.length > 0) {
       const notifs = conversations.map((conv) => {
         // Determine the other user
-        const otherUserId = user?.id === conv.clientUserId ? conv.taxProUserId : conv.clientUserId
-        const otherUserName = user?.id === conv.clientUserId ? conv.taxProName : conv.clientName
-        
-        
+        const otherUser = user?.id === conv.user1Id ? conv.user2 : conv.user1
+        const otherUserId = otherUser.id
+        const otherUserName = otherUser.name
+
+
         return {
-          id: conv.id,
-          conversationId: conv.id,
+          id: conv.conversationId,
+          conversationId: conv.conversationId,
           user: {
             id: otherUserId,
             name: otherUserName || 'Unknown',
-            email: '',
-            status: 'online' as const,
+            email: otherUser.email || '',
+            status: otherUser.status || 'offline',
             isStarred: false,
           },
           lastMessage: {
-            id: conv.id,
-            conversationId: conv.id,
-            senderId: '',
+            id: conv.conversationId,
+            conversationId: conv.conversationId,
+            senderId: otherUserId,
             senderName: otherUserName || 'Unknown',
-            senderEmail: '',
+            senderEmail: otherUser.email || '',
             content: conv.lastMessage || 'No messages yet',
             createdAt: conv.lastMessageAt || new Date().toISOString(),
             isRead: false,

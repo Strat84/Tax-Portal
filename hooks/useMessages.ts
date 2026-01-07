@@ -5,7 +5,8 @@ import { gqlClient } from '@/lib/appsync/client'
 import { GET_MESSAGES } from '@/graphql/queries/message'
 import { CREATE_MESSAGE } from '@/graphql/mutation/message'
 import { ON_NEW_MESSAGE } from '@/graphql/subscription/message'
-import { GetMessagesResponse, Message } from '@/graphql/types/message'
+import { GetMessagesResponse, CreateMessageResponse, Message } from '@/graphql/types/message'
+import { GraphQLResult } from '@aws-amplify/api-graphql'
 
 interface UseMessagesProps {
   conversationId: string | null
@@ -39,7 +40,7 @@ export function useConversationMessages({ conversationId, limit = 10 }: UseMessa
           limit,
           nextToken: token
         }
-      })
+      }) as GraphQLResult<GetMessagesResponse>
 
       const data = result.data?.getMessages
 
@@ -92,13 +93,13 @@ export function useConversationMessages({ conversationId, limit = 10 }: UseMessa
 
     try {
       // Create new subscription
-      const subscription = gqlClient
+      const subscription = (gqlClient
         .graphql({
           query: ON_NEW_MESSAGE,
           variables: { conversationId }
-        })
+        }) as any)
         .subscribe({
-          next: ({ data }) => {
+          next: ({ data }: any) => {
             const newMessage = data?.onNewMessage
             if (newMessage) {
               // Prepend new message (newest messages at start since array is in descending order)
@@ -115,7 +116,7 @@ export function useConversationMessages({ conversationId, limit = 10 }: UseMessa
               console.warn('⚠️ Received subscription event but no message data')
             }
           },
-          error: (err) => {
+          error: (err: any) => {
             console.error('❌ Message subscription error:', {
               error: err,
               message: err.message || 'Unknown error',
@@ -191,7 +192,7 @@ export function useCreateMessage() {
         variables: {
           input
         }
-      })
+      }) as GraphQLResult<CreateMessageResponse>
 
       setLoading(false)
       return result.data?.createMessage
