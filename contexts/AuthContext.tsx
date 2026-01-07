@@ -8,6 +8,8 @@ import { gqlClient } from '@/lib/appsync/client'
 import { GET_CURRENT_USER } from '@/graphql/queries/user'
 import useUserPresence, { UserStatus } from '@/hooks/useUserPresence'
 import useUserStatus from '@/hooks/useUserStatus'
+import { GetUserResponse } from '@/graphql/types/users'
+import { GraphQLResult } from '@aws-amplify/api-graphql'
 
 // TEMPORARY: Set to true to bypass authentication for UI testing
 // Set to false in real environments so AuthProvider performs real authentication
@@ -133,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const result = await gqlClient.graphql({
           query: GET_CURRENT_USER
-        })
+        }) as GraphQLResult<GetUserResponse>
 
         const userData = result.data?.getUser
         if (userData) {
