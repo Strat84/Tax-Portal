@@ -1,7 +1,7 @@
 {
   "api": {},
   "auth": {
-    "taxportal78403086": {
+    "taxportal7e7cfce8": {
       "customAuth": false,
       "dependsOn": [],
       "providerPlugin": "awscloudformation",
@@ -10,35 +10,91 @@
     }
   },
   "parameters": {
-    "AMPLIFY_auth_taxportal78403086_nativeClientId": {
+    "AMPLIFY_auth_taxportal7e7cfce8_allowUnauthenticatedIdentities": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal78403086"
+          "resourceName": "taxportal7e7cfce8"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal78403086_userPoolId": {
+    "AMPLIFY_auth_taxportal7e7cfce8_authRoleArn": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal78403086"
+          "resourceName": "taxportal7e7cfce8"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal78403086_userPoolName": {
+    "AMPLIFY_auth_taxportal7e7cfce8_authRoleName": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal78403086"
+          "resourceName": "taxportal7e7cfce8"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal78403086_webClientId": {
+    "AMPLIFY_auth_taxportal7e7cfce8_identityPoolId": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal78403086"
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_identityPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_nativeClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_unauthRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_unauthRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_userPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_userPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
+        }
+      ]
+    },
+    "AMPLIFY_auth_taxportal7e7cfce8_webClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "taxportal7e7cfce8"
         }
       ]
     },

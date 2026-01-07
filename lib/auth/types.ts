@@ -2,7 +2,7 @@ export interface AuthUser {
   cognitoUserId: string
   email: string
   name?: string
-  role: 'admin' | 'tax_pro' | 'client'
+  role: 'ADMIN' | 'TAX_PRO' | 'CLIENT'
   assignedTaxProId?: string
 }
 
