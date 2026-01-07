@@ -1,7 +1,6 @@
 {
-  "api": {},
   "auth": {
-    "taxportal7e7cfce8": {
+    "taxportal7ac09cbe": {
       "customAuth": false,
       "dependsOn": [],
       "providerPlugin": "awscloudformation",
@@ -10,113 +9,113 @@
     }
   },
   "parameters": {
-    "AMPLIFY_auth_taxportal7e7cfce8_allowUnauthenticatedIdentities": {
+    "AMPLIFY_auth_taxportal7ac09cbe_allowUnauthenticatedIdentities": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal7e7cfce8"
+          "resourceName": "taxportal7ac09cbe"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal7e7cfce8_authRoleArn": {
+    "AMPLIFY_auth_taxportal7ac09cbe_authRoleArn": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal7e7cfce8"
+          "resourceName": "taxportal7ac09cbe"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal7e7cfce8_authRoleName": {
+    "AMPLIFY_auth_taxportal7ac09cbe_authRoleName": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal7e7cfce8"
+          "resourceName": "taxportal7ac09cbe"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal7e7cfce8_identityPoolId": {
+    "AMPLIFY_auth_taxportal7ac09cbe_identityPoolId": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal7e7cfce8"
+          "resourceName": "taxportal7ac09cbe"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal7e7cfce8_identityPoolName": {
+    "AMPLIFY_auth_taxportal7ac09cbe_identityPoolName": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal7e7cfce8"
+          "resourceName": "taxportal7ac09cbe"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal7e7cfce8_nativeClientId": {
+    "AMPLIFY_auth_taxportal7ac09cbe_nativeClientId": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal7e7cfce8"
+          "resourceName": "taxportal7ac09cbe"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal7e7cfce8_unauthRoleArn": {
+    "AMPLIFY_auth_taxportal7ac09cbe_unauthRoleArn": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal7e7cfce8"
+          "resourceName": "taxportal7ac09cbe"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal7e7cfce8_unauthRoleName": {
+    "AMPLIFY_auth_taxportal7ac09cbe_unauthRoleName": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal7e7cfce8"
+          "resourceName": "taxportal7ac09cbe"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal7e7cfce8_userPoolId": {
+    "AMPLIFY_auth_taxportal7ac09cbe_userPoolId": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal7e7cfce8"
+          "resourceName": "taxportal7ac09cbe"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal7e7cfce8_userPoolName": {
+    "AMPLIFY_auth_taxportal7ac09cbe_userPoolName": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal7e7cfce8"
+          "resourceName": "taxportal7ac09cbe"
         }
       ]
     },
-    "AMPLIFY_auth_taxportal7e7cfce8_webClientId": {
+    "AMPLIFY_auth_taxportal7ac09cbe_webClientId": {
       "usedBy": [
         {
           "category": "auth",
-          "resourceName": "taxportal7e7cfce8"
+          "resourceName": "taxportal7ac09cbe"
         }
       ]
     },
-    "AMPLIFY_storage_taxportalc3dfd38a_bucketName": {
+    "AMPLIFY_storage_taxportal08179b3b_bucketName": {
       "usedBy": [
         {
           "category": "storage",
-          "resourceName": "taxportalc3dfd38a"
+          "resourceName": "taxportal08179b3b"
         }
       ]
     },
-    "AMPLIFY_storage_taxportalc3dfd38a_region": {
+    "AMPLIFY_storage_taxportal08179b3b_region": {
       "usedBy": [
         {
           "category": "storage",
-          "resourceName": "taxportalc3dfd38a"
+          "resourceName": "taxportal08179b3b"
         }
       ]
     }
   },
   "storage": {
-    "taxportalc3dfd38a": {
+    "taxportal08179b3b": {
       "dependsOn": [],
       "providerPlugin": "awscloudformation",
       "service": "S3",
