@@ -84,7 +84,10 @@ export async function middleware(request: NextRequest) {
   if (!user) {
     // Invalid token, redirect to login
     const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('redirect', pathname)
+    if (!pathname.startsWith('/login')) {
+      loginUrl.searchParams.set('redirect', pathname)
+    }
+
     const response = NextResponse.redirect(loginUrl)
     response.cookies.delete('idToken')
     return response
