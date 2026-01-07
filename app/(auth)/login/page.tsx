@@ -41,7 +41,9 @@ export default function LoginPage() {
         } catch (err) {
           // ignore
         }
-        router.push(redirectTo)
+        // Use window.location.href instead of router.push to force a full page reload
+        // This ensures middleware sees the new cookie and handles redirect properly
+        window.location.href = redirectTo
       } else {
         setError(result.error || 'Invalid email or password')
       }
