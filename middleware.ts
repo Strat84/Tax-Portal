@@ -40,54 +40,37 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Get token from cookie or Authorization header
-  const token = request.cookies.get('idToken')?.value ||
-                request.headers.get('authorization')?.replace('Bearer ', '')
-
-  console.log("check token in middleware:", token)
-  // If user hits a public/auth route and already has a valid token, redirect to dashboard
-  let verifiedUser = null
-  if (token) {
-    verifiedUser = await verifyToken(token)
-  }
-
   // Check if current path is a public route
   const isPublicRoute = PUBLIC_ROUTES.some(route => {
     if (route === '/') {
-      return pathname === '/' // Exact match for home page only
+      return pathname === '/'
     }
     return pathname === route || pathname.startsWith(route + '/')
   })
 
+  // PUBLIC ROUTES: Allow access without checking token
   if (isPublicRoute) {
-    if (verifiedUser) {
-      // already authenticated -> send to dashboard
-      const to = new URL('/dashboard', request.url)
-      return NextResponse.redirect(to)
-    }
     return NextResponse.next()
   }
+
+  // PROTECTED ROUTES: Need authentication
+  // Get token from cookie
+  const token = request.cookies.get('idToken')?.value
 
   if (!token) {
     // No token, redirect to login
     const loginUrl = new URL('/login', request.url)
-    if (!pathname.startsWith('/login')) {
-      loginUrl.searchParams.set('redirect', pathname)
-    }
-    
+    loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // Verify token (if not verified above)
-  const user = verifiedUser ?? (await verifyToken(token))
+  // Verify token
+  const user = await verifyToken(token)
 
   if (!user) {
-    // Invalid token, redirect to login
+    // Invalid token, clear cookie and redirect to login
     const loginUrl = new URL('/login', request.url)
-    if (!pathname.startsWith('/login')) {
-      loginUrl.searchParams.set('redirect', pathname)
-    }
-
+    loginUrl.searchParams.set('redirect', pathname)
     const response = NextResponse.redirect(loginUrl)
     response.cookies.delete('idToken')
     return response
@@ -97,13 +80,12 @@ export async function middleware(request: NextRequest) {
   for (const [route, allowedRoles] of Object.entries(ROUTE_ACCESS)) {
     if (pathname.startsWith(route)) {
       if (!allowedRoles.includes(user.role)) {
-        // User doesn't have access to this route
         return NextResponse.redirect(new URL('/unauthorized', request.url))
       }
     }
   }
 
-  // Add user info to headers for downstream use
+  // Add user info to headers
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set('x-user-id', user.cognitoUserId)
   requestHeaders.set('x-user-email', user.email)
