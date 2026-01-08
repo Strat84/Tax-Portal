@@ -42,11 +42,14 @@ export async function middleware(request: NextRequest) {
 
   // Check if current path is a public route
   const isPublicRoute = PUBLIC_ROUTES.some(route => {
-    if (route === '/') {
-      return pathname === '/'
-    }
-    return pathname === route || pathname.startsWith(route + '/')
-  })
+    // Normalize pathname to remove trailing slash for comparison
+    const normalizedPath = pathname.endsWith('/') && pathname !== '/' 
+      ? pathname.slice(0, -1) 
+      : pathname;
+      
+    if (route === '/') return pathname === '/';
+    return normalizedPath === route || normalizedPath.startsWith(route + '/');
+  });
 
   // PUBLIC ROUTES: Allow access without checking token
   if (isPublicRoute) {
