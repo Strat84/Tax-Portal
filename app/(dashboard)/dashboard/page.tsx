@@ -1,5 +1,3 @@
-'use client'
-import 'aws-amplify/auth/enable-oauth-listener';
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
