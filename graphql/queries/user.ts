@@ -35,6 +35,27 @@ export const UPDATE_USER_PROFILE = `
   }
 `
 
+export const LIST_USER = `
+  query listUsers{
+    listUsers{
+      items {
+        updatedAt
+        status
+        role
+        phone
+        name
+        lastActiveAt
+        lastLogin
+        isActive
+        id
+        email
+        createdAt
+      }
+      nextToken
+    }
+  }
+`
+
 export const SUBSCRIBE_USER_STATUS = `
   subscription onUpdateUser($id: ID!) {
     onUpdateUser(id: $id) {
