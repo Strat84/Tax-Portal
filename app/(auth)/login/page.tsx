@@ -36,7 +36,8 @@ export default function LoginPage() {
           const sessionResult = await getAuthSession()
           if (sessionResult.success && sessionResult.session?.tokens?.idToken) {
             const idToken = sessionResult.session.tokens.idToken.toString()
-            document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=strict`
+            const isProduction = process.env.NODE_ENV === 'production'
+            document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=lax${isProduction ? '; secure' : ''}`
 
             // Use window.location for hard navigation to trigger middleware
             window.location.href = redirectTo
