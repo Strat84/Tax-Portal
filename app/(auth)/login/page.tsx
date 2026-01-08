@@ -40,7 +40,9 @@ export default function LoginPage() {
             document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=lax${isProduction ? '; secure' : ''}`
 
             // Use window.location for hard navigation to trigger middleware
-            window.location.href = redirectTo
+            setTimeout(() => {
+              window.location.href = redirectTo
+            }, 1000);
             return
           }
         } catch (err) {
