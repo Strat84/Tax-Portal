@@ -122,7 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Store token in cookie for middleware
-      document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=strict`
+      const isProduction = process.env.NODE_ENV === 'production'
+      document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=lax${isProduction ? '; secure' : ''}`
 
       // Extract basic user info from idToken
       const extracted = extractUserFromToken(idTokenObj)
