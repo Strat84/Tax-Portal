@@ -15,7 +15,7 @@ configureAmplify()
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || '/dashboard'
+  const redirectTo = '/dashboard'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -47,7 +47,7 @@ export default function LoginPage() {
           console.error('Session error:', err)
         }
         // Fallback to router.push if session fetch fails
-        router.push(redirectTo)
+        // router.push(redirectTo)
       } else {
         setError(result.error || 'Invalid email or password')
       }
