@@ -17,44 +17,44 @@ const DEMO_MODE = false
 
 // Mock users for demo mode - change the role to test different views
 const MOCK_USERS = {
-  client: {
+  CLIENT: {
     id: 'client-demo-001',
     cognitoUserId: 'demo-cognito-client',
     email: 'client@demo.com',
     name: 'John Doe',
-    role: 'client' as const,
+    role: 'CLIENT' as const,
     phone: '555-0100',
     isActive: true,
   },
-  tax_pro: {
+  TAX_PRO: {
     id: 'taxpro-demo-001',
     cognitoUserId: 'demo-cognito-taxpro',
     email: 'taxpro@demo.com',
     name: 'Sarah Johnson',
-    role: 'tax_pro' as const,
+    role: 'TAX_PRO' as const,
     phone: '555-0200',
     isActive: true,
   },
-  admin: {
+  ADMIN: {
     id: 'admin-demo-001',
     cognitoUserId: 'demo-cognito-admin',
     email: 'admin@demo.com',
     name: 'Admin User',
-    role: 'admin' as const,
+    role: 'ADMIN' as const,
     phone: '555-0300',
     isActive: true,
   },
 }
 
-// Change this to 'client', 'tax_pro', or 'admin' to test different roles
-const DEMO_ROLE: 'client' | 'tax_pro' | 'admin' = 'tax_pro'
+// Change this to 'CLIENT', 'TAX_PRO', or 'ADMIN' to test different roles
+const DEMO_ROLE: 'CLIENT' | 'TAX_PRO' | 'ADMIN' = 'TAX_PRO'
 
 interface User {
   id: string
   cognitoUserId: string
   email: string
   name: string
-  role: 'admin' | 'tax_pro' | 'client'
+  role: 'ADMIN' | 'TAX_PRO' | 'CLIENT'
   phone?: string
   isActive: boolean
   status?: UserStatus
@@ -122,7 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Store token in cookie for middleware
-      document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=strict`
+      const isProduction = process.env.NODE_ENV === 'production'
+      document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=lax${isProduction ? '; secure' : ''}`
 
       // Extract basic user info from idToken
       const extracted = extractUserFromToken(idTokenObj)
@@ -144,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             cognitoUserId: extracted.cognitoUserId,
             email: userData.email,
             name: userData.name || extracted.name || userData.email,
-            role: userData.role.toLowerCase() as 'admin' | 'tax_pro' | 'client',
+            role: userData.role as 'ADMIN' | 'TAX_PRO' | 'CLIENT',
             phone: userData.phone,
             isActive: userData.isActive,
             status: userData.status as UserStatus,
@@ -156,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             cognitoUserId: extracted.cognitoUserId,
             email: extracted.email,
             name: extracted.name || extracted.email,
-            role: extracted.role as 'admin' | 'tax_pro' | 'client',
+            role: extracted.role as 'ADMIN' | 'TAX_PRO' | 'CLIENT',
             phone: undefined,
             isActive: true,
           })
@@ -169,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           cognitoUserId: extracted.cognitoUserId,
           email: extracted.email,
           name: extracted.name || extracted.email,
-          role: extracted.role as 'admin' | 'tax_pro' | 'client',
+          role: extracted.role as 'ADMIN' | 'TAX_PRO' | 'CLIENT',
           phone: undefined,
           isActive: true,
         })
