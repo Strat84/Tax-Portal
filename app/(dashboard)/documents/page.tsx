@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -26,6 +27,7 @@ import { FileUpload } from '@/components/files/FileUpload'
 import { FilePreview } from '@/components/files/FilePreview'
 import { useAuth } from '@/contexts/AuthContext'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useListUsers } from '@/hooks/useUserQuery'
 
 // Mock folder structure - in production, fetch from API
 interface FolderItem {
@@ -39,8 +41,12 @@ interface FolderItem {
   fileType?: string
 }
 
-export default function ClientDocumentsPage() {
+// Component for showing folder/file structure (for CLIENT users or selected client)
+function DocumentsView({ userId, userName }: { userId?: string; userName?: string }) {
+  const router = useRouter()
   const { user } = useAuth()
+  const searchParams = useSearchParams()
+  const selectedUserId = searchParams.get('userId')
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
@@ -168,11 +174,29 @@ export default function ClientDocumentsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
-          <p className="text-muted-foreground mt-2">
-            Organize and manage your tax documents
-          </p>
+        <div className="flex items-center gap-4">
+          {/* Back button for TAX_PRO viewing client documents */}
+          {user?.role === 'TAX_PRO' && selectedUserId && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => router.push('/documents')}
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </Button>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {user?.role === 'TAX_PRO' && userName ? `${userName}'s Documents` : 'Documents'}
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              {user?.role === 'TAX_PRO' && userName
+                ? `Manage documents for ${userName}`
+                : 'Organize and manage your tax documents'}
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Dialog open={createFolderDialogOpen} onOpenChange={setCreateFolderDialogOpen}>
@@ -461,5 +485,210 @@ export default function ClientDocumentsPage() {
         onNavigate={(id) => setSelectedFileId(id)}
       />
     </div>
+  )
+}
+
+// Component for TAX_PRO to view list of clients
+function ClientListView() {
+  const router = useRouter()
+  const { users, loading, error } = useListUsers()
+  const [searchQuery, setSearchQuery] = useState('')
+  // Filter users by role CLIENT and by search query (name)
+  const clients = users?.filter(user => {
+    return user.role === 'CLIENT' &&
+      user.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  }) || []
+
+
+  const handleClientClick = (userId: string) => {
+    router.push(`/documents?userId=${userId}`)
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Client Documents</h1>
+          <p className="text-muted-foreground mt-2">
+            Select a client to view their documents
+          </p>
+        </div>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p>Loading clients...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Client Documents</h1>
+          <p className="text-muted-foreground mt-2">
+            Select a client to view their documents
+          </p>
+        </div>
+        <Alert variant="destructive">
+          <AlertDescription>
+            Failed to load clients. Please try again.
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Client Documents</h1>
+        <p className="text-muted-foreground mt-2">
+          Select a client to view their documents
+        </p>
+      </div>
+
+      {/* Search Bar */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="relative">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <Input
+              placeholder="Search clients by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Client List */}
+      <Card>
+        <CardContent className="p-6">
+          {clients.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">👥</div>
+              <h3 className="text-lg font-semibold mb-2">
+                {searchQuery ? 'No clients found' : 'No clients available'}
+              </h3>
+              <p className="text-muted-foreground">
+                {searchQuery
+                  ? 'Try adjusting your search'
+                  : 'No clients have been assigned to you yet'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {clients.map((client) => (
+                <Card
+                  key={client.id}
+                  className="cursor-pointer hover:shadow-lg transition-all hover:border-primary"
+                  onClick={() => handleClientClick(client.id)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-lg font-semibold text-primary">
+                            {client.name?.charAt(0).toUpperCase() || 'U'}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg">{client.name}</h3>
+                          <p className="text-sm text-muted-foreground">{client.email}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-sm">
+                      {client.phone && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                          <span>{client.phone}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <Badge variant={client.status === 'online' ? 'default' : 'secondary'}>
+                          {client.status}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t">
+                      <Button variant="outline" size="sm" className="w-full">
+                        View Documents
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// Main component - decides which view to show based on role
+function DocumentsPageContent() {
+  const { user } = useAuth()
+  const searchParams = useSearchParams()
+  const selectedUserId = searchParams.get('userId')
+
+  // Loading state while user is being fetched
+  if (!user) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p>Loading user information...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // If userId in URL, show that user's documents (TAX_PRO viewing client)
+  if (selectedUserId) {
+    return <DocumentsView userId={selectedUserId} userName="Client Documents" />
+  }
+
+  // If TAX_PRO and no userId, show client list
+  if (user?.role === 'TAX_PRO') {
+    return <ClientListView />
+  }
+
+  // For all other users (CLIENT, ADMIN, etc), show their own documents
+  return <DocumentsView userId={user?.id} userName={user?.name} />
+}
+
+// Wrap with Suspense boundary
+export default function DocumentsPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p>Loading...</p>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <DocumentsPageContent />
+    </Suspense>
   )
 }

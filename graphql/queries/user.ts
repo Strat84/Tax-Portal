@@ -36,7 +36,7 @@ export const UPDATE_USER_PROFILE = `
 `
 
 export const LIST_USER = `
-  query listUsers {
+  query listUsers{
     listUsers{
       items {
         updatedAt

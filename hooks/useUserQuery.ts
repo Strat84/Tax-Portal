@@ -1,7 +1,7 @@
 'use client'
 
 import { gqlClient } from '@/lib/appsync/client'
-import { GET_CURRENT_USER, UPDATE_USER_PROFILE } from '@/graphql/queries/user'
+import { GET_CURRENT_USER, UPDATE_USER_PROFILE, LIST_USER } from '@/graphql/queries/user'
 import { User, GetUserResponse, UpdateUserResponse } from '@/graphql/types/users'
 import { GraphQLResult } from '@aws-amplify/api-graphql'
 import { useEffect, useState } from 'react'
@@ -80,5 +80,45 @@ export function useUpdateUserProfile() {
     loading,
     error,
     data: data?.updateUser
+  }
+}
+
+// Hook for listing all users
+export function useListUsers() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<any>(null)
+
+  const fetchUsers = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await gqlClient.graphql({
+        query: LIST_USER
+      }) as GraphQLResult<any>
+      setData(result.data)
+      setLoading(false)
+      return result.data
+    } catch (err) {
+      setError(err)
+      setLoading(false)
+      throw err
+    }
+  }
+
+  // Initial fetch
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const refetch = async () => {
+    return await fetchUsers()
+  }
+
+  return {
+    users: data?.listUsers?.items as User[],
+    loading,
+    error,
+    refetch
   }
 }
