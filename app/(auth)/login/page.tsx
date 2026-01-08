@@ -41,7 +41,7 @@ export default function LoginPage() {
 
             // Use window.location for hard navigation to trigger middleware
             setTimeout(() => {
-              window.location.href = redirectTo
+              router.push(redirectTo)
             }, 1000);
             return
           }

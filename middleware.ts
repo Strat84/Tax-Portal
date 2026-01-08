@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('idToken')?.value ||
                 request.headers.get('authorization')?.replace('Bearer ', '')
 
-  console.log("check token in middleware:")
+  console.log("check token in middleware:", token)
   // If user hits a public/auth route and already has a valid token, redirect to dashboard
   let verifiedUser = null
   if (token) {
