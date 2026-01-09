@@ -63,4 +63,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard/', request.url))
   }
 
+  // User info headers mein add karo
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-user-id', user.cognitoUserId)
+  requestHeaders.set('x-user-email', user.email)
+  requestHeaders.set('x-user-role', user.role)
+  if (user.name) {
+    requestHeaders.set('x-user-name', user.name)
+  }
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

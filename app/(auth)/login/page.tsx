@@ -38,9 +38,10 @@ export default function LoginPage() {
             const idToken = sessionResult.session.tokens.idToken.toString()
             const isProduction = process.env.NODE_ENV === 'production'
             document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=lax${isProduction ? '; secure' : ''}`
+            router.push(redirectTo)
 
             // Use window.location for hard navigation to trigger middleware
-            window.location.href = redirectTo 
+            // window.location.href = redirectTo 
           }
         } catch (err) {
           console.error('Session error:', err)
