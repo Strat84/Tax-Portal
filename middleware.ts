@@ -46,14 +46,14 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('idToken')?.value
 
   if (!token) {
-    const loginUrl = new URL('/login', request.url)
+    const loginUrl = new URL('/login/', request.url)
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
   const user = await verifyToken(token)
   console.log('Token Verification Result:', user)
-
+  
   if (!user) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
@@ -64,10 +64,10 @@ export async function middleware(request: NextRequest) {
 
   // Agar user login page pe hai aur uska valid token hai, toh usko dashboard pe redirect karo
   console.log("PATH NAME TRIGGER ::",pathname)
-  if (pathname === '/login' && user) {
+  if (pathname === '/login/' && user) {
     console.log("USER IN LINE NO 66 ---------------------", user)
     console.log("request url ::::::: ", request.url)
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/dashboard/', request.url))
   }
 
   // User info headers mein add karo
