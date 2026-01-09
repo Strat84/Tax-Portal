@@ -101,29 +101,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      // If there's no auth token cookie, don't attempt to call Cognito
-      const hasIdToken = typeof document !== 'undefined' && /(^|; )idToken=([^;]+)/.test(document.cookie)
-      if (!hasIdToken) {
-        setUser(null)
-        setLoading(false)
-        return
-      }
-
-      // Token exists, now check auth - set loading only when actually checking auth
+      // Get the session to access tokens - Amplify handles cookies automatically
       setLoading(true)
 
-      // Get the session to access tokens
       const session = await fetchAuthSession()
       const idTokenObj = session.tokens?.idToken
       const idToken = idTokenObj?.toString()
 
       if (!idToken) {
-        throw new Error('No authentication token found')
+        setUser(null)
+        setLoading(false)
+        return
       }
-
-      // Store token in cookie for middleware
-      const isProduction = process.env.NODE_ENV === 'production'
-      document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=lax${isProduction ? '; secure' : ''}`
 
       // Extract basic user info from idToken
       const extracted = extractUserFromToken(idTokenObj)
@@ -207,12 +196,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Sign out locally (not globally to avoid invalidating the session during status update)
+      // Sign out - Amplify clears its cookies automatically
       await cognitoSignOut()
-
-      // Clear all auth cookies
-      document.cookie = 'idToken=; path=/; max-age=0'
-      document.cookie = 'amplifyAuthenticatedUser=; path=/; max-age=0'
 
       setUser(null)
       setError(null)
@@ -223,9 +208,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Still clear user and redirect even on error
       setUser(null)
       setLoading(false)
-      document.cookie = 'idToken=; path=/; max-age=0'
-      document.cookie = 'amplifyAuthenticatedUser=; path=/; max-age=0'
-
       router.push('/login')
     }
   }
