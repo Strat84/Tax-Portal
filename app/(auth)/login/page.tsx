@@ -31,23 +31,9 @@ export default function LoginPage() {
       const result = await signIn(email, password)
 
       if (result.success) {
-        // Get session and set idToken cookie so middleware and AuthProvider detect login
-        try {
-          const sessionResult = await getAuthSession()
-          if (sessionResult.success && sessionResult.session?.tokens?.idToken) {
-            const idToken = sessionResult.session.tokens.idToken.toString()
-            const isProduction = process.env.NODE_ENV === 'production'
-            document.cookie = `idToken=${idToken}; path=/; max-age=3600; samesite=lax${isProduction ? '; secure' : ''}`
-            router.push(redirectTo)
-
-            // Use window.location for hard navigation to trigger middleware
-            // window.location.href = redirectTo 
-          }
-        } catch (err) {
-          console.error('Session error:', err)
-        }
-        // Fallback to router.push if session fetch fails
-        // router.push(redirectTo)
+        // Use window.location for hard navigation to trigger middleware
+        // Amplify handles cookie management automatically
+        window.location.href = redirectTo
       } else {
         setError(result.error || 'Invalid email or password')
       }
