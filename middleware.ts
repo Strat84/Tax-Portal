@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyToken } from './lib/auth/jwt'
 
-export const runtime = 'nodejs' // 🔴 VERY IMPORTANT
 
+const DEMO_MODE = false
+
+// Public routes
 const PUBLIC_ROUTES = [
   '/',
   '/login',
@@ -16,25 +18,19 @@ const PUBLIC_ROUTES = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // ✅ Always ignore Next internal & static files
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.includes('.')
-  ) {
+  if (DEMO_MODE) {
     return NextResponse.next()
   }
 
-  const normalizedPath =
-    pathname.endsWith('/') && pathname !== '/'
-      ? pathname.slice(0, -1)
-      : pathname
 
-  const isPublicRoute = PUBLIC_ROUTES.some(route =>
-    route === '/'
-      ? normalizedPath === '/'
-      : normalizedPath === route || normalizedPath.startsWith(route + '/')
-  )
+  const isPublicRoute = PUBLIC_ROUTES.some(route => {
+    const normalizedPath = pathname.endsWith('/') && pathname !== '/' 
+      ? pathname.slice(0, -1) 
+      : pathname;
+      
+    if (route === '/') return pathname === '/';
+    return normalizedPath === route || normalizedPath.startsWith(route + '/');
+  });
 
   if (isPublicRoute) {
     return NextResponse.next()
@@ -43,26 +39,28 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('idToken')?.value
 
   if (!token) {
-    const loginUrl = new URL('/login', request.url)
+    const loginUrl = new URL('/login/', request.url)
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
   const user = await verifyToken(token)
-
+  console.log('Token Verification Result:', user)
+  
   if (!user) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
-
-    const res = NextResponse.redirect(loginUrl)
-    res.cookies.delete('idToken')
-    return res
+    const response = NextResponse.redirect(loginUrl)
+    response.cookies.delete('idToken')
+    return response
   }
 
-  // ✅ VERY IMPORTANT: allow request to continue
-  return NextResponse.next()
-}
+  // Agar user login page pe hai aur uska valid token hai, toh usko dashboard pe redirect karo
+  console.log("PATH NAME TRIGGER ::",pathname)
+  if (pathname === '/login/' && user) {
+    console.log("USER IN LINE NO 66 ---------------------", user)
+    console.log("request url ::::::: ", request.url)
+    return NextResponse.redirect(new URL('/dashboard/', request.url))
+  }
 
-export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
