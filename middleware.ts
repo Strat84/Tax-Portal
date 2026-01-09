@@ -22,6 +22,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next()
+  }
 
   const isPublicRoute = PUBLIC_ROUTES.some(route => {
     const normalizedPath = pathname.endsWith('/') && pathname !== '/' 
@@ -39,7 +46,7 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('idToken')?.value
 
   if (!token) {
-    const loginUrl = new URL('/login/', request.url)
+    const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
   }
