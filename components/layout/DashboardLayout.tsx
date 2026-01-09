@@ -49,9 +49,11 @@ export function DashboardLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const { userStatus, setManualStatus, signOut: authSignOut } = useAuth()
 
   const handleSignOut = async () => {
+    setIsLoggingOut(true)
     await authSignOut()
   }
 
@@ -83,9 +85,20 @@ export function DashboardLayout({
   // }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+    <>
+      {/* Logout Loading Overlay */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-8 shadow-xl flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <p className="text-lg font-medium text-slate-900 dark:text-slate-100">Logging out...</p>
+          </div>
+        </div>
+      )}
+
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        {/* Top Navigation Bar */}
+        <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
         <div className="flex h-16 items-center px-4 gap-4">
           {/* Mobile Menu Toggle */}
           <Button
@@ -224,6 +237,7 @@ export function DashboardLayout({
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
-    </div>
+      </div>
+    </>
   )
 }

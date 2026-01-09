@@ -19,15 +19,32 @@ export default function ClientLayout({
   children: React.ReactNode
 }) {
   const { user, loading, error } = useCurrentUser()
-
   const router = useRouter()
 
   useEffect(() => {
+    // Only redirect when loading is complete AND user is not present
     if (!loading && !user) {
-      // redirect unauthenticated users to login
+      console.log('🔄 No user found after loading, redirecting to login...')
       router.replace('/login')
     }
   }, [loading, user, router])
+
+  // Show loading state while fetching user data
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // If no user after loading, return null (useEffect will handle redirect)
+  if (!user) {
+    return null
+  }
 
   return (
     <DashboardLayout
