@@ -11,8 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useListUsers } from '@/hooks/useUserQuery'
+import { formatRelativeTime } from '@/lib/utils'
 
 export default function Dashboard() {
+  const { users, loading } = useListUsers(4)
 
   // TODO: Fetch actual data from API
   const stats = [
@@ -22,40 +25,15 @@ export default function Dashboard() {
     { label: 'Unread Messages', value: '5', change: 'From 4 clients', icon: '💬' },
   ]
 
-  const recentClients = [
-    {
-      id: '1',
-      name: 'John Doe',
-      status: 'in_progress',
-      pendingDocs: 2,
-      unreadMessages: 1,
-      lastActivity: '2 hours ago',
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      status: 'ready_for_review',
-      pendingDocs: 0,
-      unreadMessages: 0,
-      lastActivity: '1 day ago',
-    },
-    {
-      id: '3',
-      name: 'Mike Johnson',
-      status: 'documents_pending',
-      pendingDocs: 3,
-      unreadMessages: 2,
-      lastActivity: '3 days ago',
-    },
-    {
-      id: '4',
-      name: 'Sarah Williams',
-      status: 'filed',
-      pendingDocs: 0,
-      unreadMessages: 0,
-      lastActivity: '1 week ago',
-    },
-  ]
+  // Map API users to client format with dynamic name and lastActivity
+  const recentClients = users?.map((user) => ({
+    id: user.id,
+    name: user.name,
+    status: 'in_progress', // Static for now
+    pendingDocs: 2, // Static for now
+    unreadMessages: 1, // Static for now
+    lastActivity: formatRelativeTime(user.lastActiveAt),
+  })) || []
 
   const statusColors: Record<string, string> = {
     documents_pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
@@ -127,38 +105,54 @@ export default function Dashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentClients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell className="font-medium">{client.name}</TableCell>
-                  <TableCell>
-                    <Badge className={statusColors[client.status]} variant="outline">
-                      {statusLabels[client.status]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {client.pendingDocs > 0 ? (
-                      <Badge variant="destructive">{client.pendingDocs}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {client.unreadMessages > 0 ? (
-                      <Badge variant="default">{client.unreadMessages}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {client.lastActivity}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      View
-                    </Button>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : recentClients.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    No clients found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                recentClients.map((client) => (
+                  <TableRow key={client.id}>
+                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell>
+                      <Badge className={statusColors[client.status]} variant="outline">
+                        {statusLabels[client.status]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {client.pendingDocs > 0 ? (
+                        <Badge variant="destructive">{client.pendingDocs}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {client.unreadMessages > 0 ? (
+                        <Badge variant="default">{client.unreadMessages}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {client.lastActivity}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm">
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

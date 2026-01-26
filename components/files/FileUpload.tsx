@@ -5,24 +5,35 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
+import { uploadMultipleFilesToS3, UploadProgress } from '@/lib/storage/fileUpload'
+import { useCreateFile } from '@/hooks/useFileQuery'
 
 interface FileUploadProps {
-  onUpload?: (files: File[]) => Promise<void>
+  userId: string
+  parentPath?: string | null
+  onUploadComplete?: () => void
   accept?: string
   maxSize?: number // in MB
   multiple?: boolean
+  maxFiles?: number
 }
 
 export function FileUpload({
-  onUpload,
+  userId,
+  parentPath = '/',
+  onUploadComplete,
   accept = '*',
   maxSize = 50,
-  multiple = true
+  multiple = true,
+  maxFiles = 5
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
+  const [fileProgress, setFileProgress] = useState<{ [key: number]: UploadProgress }>({})
+
+  // Use custom hook for creating file entries
+  const { createFile } = useCreateFile()
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -72,9 +83,17 @@ export function FileUpload({
     }
 
     if (validFiles.length > 0) {
-      setSelectedFiles(prev => multiple ? [...prev, ...validFiles] : [validFiles[0]])
+      setSelectedFiles(prev => {
+        const newFiles = multiple ? [...prev, ...validFiles] : [validFiles[0]]
+        // Limit to maxFiles
+        if (newFiles.length > maxFiles) {
+          alert(`You can only upload up to ${maxFiles} files at a time.`)
+          return newFiles.slice(0, maxFiles)
+        }
+        return newFiles
+      })
     }
-  }, [multiple, maxSize])
+  }, [multiple, maxSize, maxFiles])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -95,8 +114,19 @@ export function FileUpload({
     }
 
     if (validFiles.length > 0) {
-      setSelectedFiles(prev => multiple ? [...prev, ...validFiles] : [validFiles[0]])
+      setSelectedFiles(prev => {
+        const newFiles = multiple ? [...prev, ...validFiles] : [validFiles[0]]
+        // Limit to maxFiles
+        if (newFiles.length > maxFiles) {
+          alert(`You can only upload up to ${maxFiles} files at a time.`)
+          return newFiles.slice(0, maxFiles)
+        }
+        return newFiles
+      })
     }
+
+    // Reset input value to allow re-uploading same file
+    e.target.value = ''
   }
 
   const handleRemoveFile = (index: number) => {
@@ -104,39 +134,54 @@ export function FileUpload({
   }
 
   const handleUpload = async () => {
-    if (selectedFiles.length === 0 || !onUpload) return
+    if (selectedFiles.length === 0) return
 
     setUploading(true)
-    setUploadProgress(0)
+    setFileProgress({})
 
     try {
-      // Simulate upload progress
-      const interval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(interval)
-            return 90
-          }
-          return prev + 10
+      // Upload files to S3 with individual progress tracking
+      const uploadResults = await uploadMultipleFilesToS3(
+        selectedFiles,
+        userId,
+        parentPath,
+        (fileIndex, fileName, progress) => {
+          setFileProgress(prev => ({
+            ...prev,
+            [fileIndex]: progress
+          }))
+        }
+      )
+
+      // Create database entries for each file via GraphQL hook
+      for (const result of uploadResults) {
+        // Clean parentPath for database entry
+        const cleanParentPath = parentPath?.replace(/^\/+|\/+$/g, '') || '/'
+
+        await createFile({
+          type: result.type,
+          name: result.name,
+          fileType: result.fileType,
+          s3Key: result.s3Key,
+          parentPath: cleanParentPath,
+          fullPath: result.fullPath,
+          size: result.size,
+          mimeType: result.mimeType,
         })
-      }, 200)
-
-      await onUpload(selectedFiles)
-
-      clearInterval(interval)
-      setUploadProgress(100)
+      }
 
       // Clear files after successful upload
       setTimeout(() => {
         setSelectedFiles([])
-        setUploadProgress(0)
+        setFileProgress({})
         setUploading(false)
+        onUploadComplete?.()
       }, 1000)
     } catch (error) {
       console.error('Upload failed:', error)
       alert('Upload failed. Please try again.')
       setUploading(false)
-      setUploadProgress(0)
+      setFileProgress({})
     }
   }
 
@@ -198,7 +243,7 @@ export function FileUpload({
             </Button>
           </label>
           <p className="text-xs text-muted-foreground mt-4">
-            Maximum file size: {maxSize}MB. Executable files are not allowed.
+            Maximum file size: {maxSize}MB. Up to {maxFiles} files allowed. Executable files are not allowed.
           </p>
         </div>
       </Card>
@@ -208,7 +253,7 @@ export function FileUpload({
         <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-semibold">
-              Selected Files ({selectedFiles.length})
+              Selected Files ({selectedFiles.length}/{maxFiles})
             </h4>
             <Button
               onClick={handleUpload}
@@ -219,58 +264,61 @@ export function FileUpload({
             </Button>
           </div>
 
-          {/* Upload Progress */}
-          {uploading && (
-            <div className="mb-4">
-              <Progress value={uploadProgress} className="h-2" />
-              <p className="text-xs text-muted-foreground mt-1 text-center">
-                {uploadProgress}% uploaded
-              </p>
-            </div>
-          )}
-
-          {/* File List */}
-          <div className="space-y-2">
+          {/* File List with Individual Progress */}
+          <div className="space-y-3">
             {selectedFiles.map((file, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg"
+                className="border border-slate-200 dark:border-slate-700 rounded-lg p-3"
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="flex-shrink-0">
-                    {file.type.startsWith('image/') ? '🖼️' :
-                     file.type === 'application/pdf' ? '📄' :
-                     file.type.includes('spreadsheet') || file.name.endsWith('.xlsx') ? '📊' :
-                     file.type.includes('document') || file.name.endsWith('.docx') ? '📝' : '📎'}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex-shrink-0">
+                      {file.type.startsWith('image/') ? '🖼️' :
+                       file.type === 'application/pdf' ? '📄' :
+                       file.type.includes('spreadsheet') || file.name.endsWith('.xlsx') ? '📊' :
+                       file.type.includes('document') || file.name.endsWith('.docx') ? '📝' : '📎'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{file.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatFileSize(file.size)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatFileSize(file.size)}
+                  {!uploading && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveFile(index)}
+                      className="flex-shrink-0"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </Button>
+                  )}
+                </div>
+
+                {/* Individual File Progress */}
+                {uploading && fileProgress[index] && (
+                  <div className="mt-2">
+                    <Progress value={fileProgress[index].percentage} className="h-1.5" />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {fileProgress[index].percentage}% uploaded
                     </p>
                   </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveFile(index)}
-                  disabled={uploading}
-                  className="flex-shrink-0"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </Button>
+                )}
               </div>
             ))}
           </div>

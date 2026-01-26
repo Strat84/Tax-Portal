@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAllNotifications } from '@/hooks/useAllNotifications'
+import { useAuth } from '@/contexts/AuthContext'
+import { useNotifications } from '@/hooks/useNotification'
 import { NotificationPanelGeneral } from './NotificationPanelGeneral'
-import { Notification } from '@/types/notifications-general'
+import { NotificationItem } from '@/graphql/types/notification'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -12,12 +13,42 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
+// Extract folder path from fullPath field for navigation
+// Example: private/userId/folder1/file.png -> userId/folder1/
+const extractFolderPathFromFullPath = (fullPath: string): string => {
+  // Remove 'private/' prefix
+  let path = fullPath.replace(/^private\//, '')
+
+  // Remove filename (last part after last /)
+  const lastSlashIndex = path.lastIndexOf('/')
+  if (lastSlashIndex !== -1) {
+    path = path.substring(0, lastSlashIndex + 1) // Keep the trailing slash
+  }
+
+  return path
+}
+
 export function NotificationBellGeneral() {
   const router = useRouter()
-  const { notifications, unreadCount, loading, refetch } = useAllNotifications()
+  const { user } = useAuth()
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    fetchNotifications,
+    updateNotification,
+    setNotifications
+  } = useNotifications(user?.id)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [prevUnreadCount, setPrevUnreadCount] = useState(0)
+
+  // Fetch initial 10 notifications
+  useEffect(() => {
+    if (user?.id) {
+      fetchNotifications(10)
+    }
+  }, [user?.id, fetchNotifications])
 
   // Animate badge when unread count changes
   useEffect(() => {
@@ -29,27 +60,51 @@ export function NotificationBellGeneral() {
     setPrevUnreadCount(unreadCount)
   }, [unreadCount, prevUnreadCount])
 
-  // Refetch notifications periodically (every 10 seconds)
+  // Refetch notifications periodically (every 30 seconds)
   useEffect(() => {
     const interval = setInterval(() => {
-      refetch()
-    }, 10000)
+      if (user?.id) {
+        fetchNotifications(10)
+      }
+    }, 30000)
     return () => clearInterval(interval)
-  }, [refetch])
+  }, [user?.id, fetchNotifications])
 
-  const handleSelectNotification = (notification: Notification) => {
+  const handleSelectNotification = async (notification: NotificationItem) => {
+    // Update notification to SEEN if it's UNSEEN
+    if (notification.isSeenStatus === 'UNSEEN') {
+      try {
+        await updateNotification(notification.PK, notification.SK, 'SEEN')
+
+        // Update local state immediately to reflect the change
+        setNotifications(prev =>
+          prev.map(n =>
+            n.notificationId === notification.notificationId
+              ? { ...n, isSeenStatus: 'SEEN' as const }
+              : n
+          )
+        )
+      } catch (err) {
+        console.error('Failed to update notification:', err)
+      }
+    }
+
     // Handle navigation based on notification type
     switch (notification.type) {
-      case 'message':
-        router.push(`/dashboard/messages?conversation=${notification.metadata?.conversationId}`)
+      case 'MESSAGE':
+        if (notification.conversationId) {
+          router.push(`/messages?conversation=${notification.conversationId}`)
+        }
         break
-      case 'document':
-        router.push(`/dashboard/documents?id=${notification.metadata?.documentId}`)
+      case 'FILE':
+        if (notification.fullPath) {
+          // Extract folder path from fullPath field
+          // fullPath: private/userId/folder1/file.png -> userId/folder1/
+          const folderPath = extractFolderPathFromFullPath(notification.fullPath)
+          router.push(`/documents/${folderPath}`)
+        }
         break
-      case 'task':
-        router.push(`/dashboard/tasks?id=${notification.metadata?.taskId}`)
-        break
-      case 'system':
+      case 'SYSTEM':
         router.push('/notifications')
         break
       default:
@@ -88,7 +143,7 @@ export function NotificationBellGeneral() {
                 isAnimating ? 'animate-pulse' : ''
               }`}
             >
-              {unreadCount > 99 ? '99+' : unreadCount}
+              {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
 

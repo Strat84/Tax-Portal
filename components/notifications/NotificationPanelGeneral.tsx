@@ -1,16 +1,16 @@
 'use client'
 
-import { Notification } from '@/types/notifications-general'
+import { NotificationItem } from '@/graphql/types/notification'
 import { NotificationItemGeneral } from './NotificationItemGeneral'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
 
 interface NotificationPanelGeneralProps {
-  notifications: Notification[]
+  notifications: NotificationItem[]
   unreadCount: number
   loading?: boolean
-  onSelectNotification: (notification: Notification) => void
+  onSelectNotification: (notification: NotificationItem) => void
 }
 
 export function NotificationPanelGeneral({
@@ -61,7 +61,7 @@ export function NotificationPanelGeneral({
           <div>
             {notifications.map((notification) => (
               <NotificationItemGeneral
-                key={notification.id}
+                key={notification.notificationId}
                 notification={notification}
                 onSelect={onSelectNotification}
               />

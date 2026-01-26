@@ -36,8 +36,8 @@ export const UPDATE_USER_PROFILE = `
 `
 
 export const LIST_USER = `
-  query listUsers{
-    listUsers{
+  query listUsers($limit: Int, $nextToken: String){
+    listUsers(limit: $limit, nextToken: $nextToken){
       items {
         updatedAt
         status

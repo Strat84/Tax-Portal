@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -20,66 +21,48 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useListUsers } from '@/hooks/useUserQuery'
+import { formatRelativeTime } from '@/lib/utils'
 
 export default function TaxProClientsPage() {
-  // TODO: Fetch from API
-  const clients = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      status: 'in_progress',
-      pendingDocs: 2,
-      unreadMessages: 1,
-      lastActivity: '2 hours ago',
-      taxYear: 2025,
-      phone: '(555) 123-4567',
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      status: 'ready_for_review',
-      pendingDocs: 0,
-      unreadMessages: 0,
-      lastActivity: '1 day ago',
-      taxYear: 2025,
-      phone: '(555) 234-5678',
-    },
-    {
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike@example.com',
-      status: 'documents_pending',
-      pendingDocs: 3,
-      unreadMessages: 2,
-      lastActivity: '3 days ago',
-      taxYear: 2025,
-      phone: '(555) 345-6789',
-    },
-    {
-      id: '4',
-      name: 'Sarah Williams',
-      email: 'sarah@example.com',
-      status: 'filed',
-      pendingDocs: 0,
-      unreadMessages: 0,
-      lastActivity: '1 week ago',
-      taxYear: 2025,
-      phone: '(555) 456-7890',
-    },
-    {
-      id: '5',
-      name: 'David Brown',
-      email: 'david@example.com',
-      status: 'complete',
-      pendingDocs: 0,
-      unreadMessages: 0,
-      lastActivity: '2 weeks ago',
-      taxYear: 2024,
-      phone: '(555) 567-8901',
-    },
-  ]
+  const { users, loading, loadingMore, loadMore, hasMore } = useListUsers(10)
+  const observerTarget = useRef<HTMLDivElement>(null)
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    const currentTarget = observerTarget.current
+    if (currentTarget) {
+      observer.observe(currentTarget)
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget)
+      }
+    }
+  }, [hasMore, loadingMore, loadMore])
+
+  // Map API users to client format with dynamic name and lastActivity
+  const clients = users?.map((user) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    status: 'in_progress', // Static for now
+    pendingDocs: 2, // Static for now
+    unreadMessages: 1, // Static for now
+    lastActivity: formatRelativeTime(user.lastActiveAt),
+    taxYear: 2025, // Static for now
+    phone: user.phone || 'N/A',
+  })) || []
 
   const statusColors: Record<string, string> = {
     documents_pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
@@ -217,67 +200,99 @@ export default function TaxProClientsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clients.map((client) => (
-                <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50">
-                  <TableCell>
-                    <Link href={`/tax-pro/clients/${client.id}`}>
-                      <div>
-                        <p className="font-medium hover:underline">{client.name}</p>
-                        <p className="text-sm text-muted-foreground">{client.email}</p>
-                      </div>
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={statusColors[client.status]} variant="outline">
-                      {statusLabels[client.status]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {client.pendingDocs > 0 ? (
-                      <Badge variant="destructive">{client.pendingDocs}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {client.unreadMessages > 0 ? (
-                      <Badge variant="default">{client.unreadMessages}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {client.lastActivity}
-                  </TableCell>
-                  <TableCell>{client.taxYear}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link href={`/tax-pro/clients/${client.id}`}>
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </Link>
-                      <Link href={`/tax-pro/messages?client=${client.id}`}>
-                        <Button variant="ghost" size="sm">
-                          <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                            />
-                          </svg>
-                        </Button>
-                      </Link>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-12">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900 dark:border-gray-100"></div>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : clients.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                    No clients found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <>
+                  {clients.map((client) => (
+                    <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50">
+                      <TableCell>
+                        <Link href={`/clients/${client.id}`}>
+                          <div>
+                            <p className="font-medium hover:underline">{client.name}</p>
+                            <p className="text-sm text-muted-foreground">{client.email}</p>
+                          </div>
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={statusColors[client.status]} variant="outline">
+                          {statusLabels[client.status]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {client.pendingDocs > 0 ? (
+                          <Badge variant="destructive">{client.pendingDocs}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {client.unreadMessages > 0 ? (
+                          <Badge variant="default">{client.unreadMessages}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {client.lastActivity}
+                      </TableCell>
+                      <TableCell>{client.taxYear}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link href={`/clients/${client.id}`}>
+                            <Button variant="ghost" size="sm">
+                              View
+                            </Button>
+                          </Link>
+                          <Link href={`/messages?client=${client.id}`}>
+                            <Button variant="ghost" size="sm">
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                />
+                              </svg>
+                            </Button>
+                          </Link>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* Infinite scroll trigger and loading indicator */}
+                  {hasMore && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4">
+                        <div ref={observerTarget}>
+                          {loadingMore && (
+                            <div className="flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 dark:border-gray-100"></div>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              )}
             </TableBody>
           </Table>
         </CardContent>

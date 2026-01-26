@@ -1,11 +1,11 @@
 'use client'
 
-import { Notification } from '@/types/notifications-general'
+import { NotificationItem } from '@/graphql/types/notification'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 interface NotificationItemProps {
-  notification: Notification
-  onSelect: (notification: Notification) => void
+  notification: NotificationItem
+  onSelect: (notification: NotificationItem) => void
 }
 
 const formatTime = (dateString: string): string => {
@@ -26,14 +26,12 @@ const formatTime = (dateString: string): string => {
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
-    case 'message':
+    case 'MESSAGE':
       return '💬'
-    case 'document':
+    case 'FILE':
       return '📄'
-    case 'system':
+    case 'SYSTEM':
       return '⚡'
-    case 'task':
-      return '✅'
     default:
       return '🔔'
   }
@@ -51,7 +49,7 @@ export function NotificationItemGeneral({
     <button
       onClick={handleClick}
       className={`w-full px-4 py-3 text-left transition-all duration-200 border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 ${
-        notification.status === 'unread'
+        notification.isSeenStatus === 'UNSEEN'
           ? 'bg-blue-50/50 dark:bg-blue-900/20'
           : 'bg-white dark:bg-slate-900'
       }`}
@@ -61,26 +59,18 @@ export function NotificationItemGeneral({
         <div className="flex-shrink-0 flex items-center">
           <div
             className={`w-2 h-2 rounded-full ${
-              notification.status === 'unread' ? 'bg-blue-500' : 'bg-slate-400'
+              notification.isSeenStatus === 'UNSEEN' ? 'bg-blue-500' : 'bg-slate-400'
             }`}
           />
         </div>
 
         {/* Icon and content */}
         <div className="flex-1 min-w-0 flex gap-3">
-          {/* Type icon and avatar */}
+          {/* Type icon */}
           <div className="flex-shrink-0">
-            {notification.type === 'message' && notification.userAvatar ? (
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-                  {notification.userAvatar}
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm">
-                {getNotificationIcon(notification.type)}
-              </div>
-            )}
+            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm">
+              {getNotificationIcon(notification.type)}
+            </div>
           </div>
 
           {/* Notification content */}
@@ -98,7 +88,7 @@ export function NotificationItemGeneral({
 
             {/* Timestamp */}
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              {formatTime(notification.timestamp)}
+              {formatTime(notification.createdAt)}
             </p>
           </div>
         </div>

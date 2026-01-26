@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
+import { downloadFile } from '@/lib/storage/fileUpload'
 
 interface FilePreviewFile {
   id: string
@@ -19,6 +20,7 @@ interface FilePreviewFile {
   size: number
   uploadedAt?: string
   tags?: string[]
+  s3Key?: string
 }
 
 interface FilePreviewProps {
@@ -33,20 +35,10 @@ export function FilePreview({ file, files = [], open, onOpenChange, onNavigate }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [zoom, setZoom] = useState(100)
+  const prevFileIdRef = useRef<string | null>(null)
 
-  useEffect(() => {
-    if (file) {
-      setLoading(true)
-      setError(null)
-      setZoom(100)
-      // Simulate loading
-      setTimeout(() => setLoading(false), 500)
-    }
-  }, [file])
-
-  if (!file) return null
-
-  const currentIndex = files.findIndex(f => f.id === file.id)
+  // Calculate values that will be used in hooks
+  const currentIndex = file ? files.findIndex(f => f.id === file.id) : -1
   const hasPrevious = currentIndex > 0
   const hasNext = currentIndex < files.length - 1
 
@@ -61,6 +53,25 @@ export function FilePreview({ file, files = [], open, onOpenChange, onNavigate }
       onNavigate(files[currentIndex + 1].id)
     }
   }
+
+  useEffect(() => {
+    if (file) {
+      // Only reset zoom if we're viewing a different file
+      const fileChanged = prevFileIdRef.current !== file.id
+
+      setLoading(true)
+      setError(null)
+
+      // Only reset zoom when switching to a different file, not on re-renders
+      if (fileChanged) {
+        setZoom(100)
+        prevFileIdRef.current = file.id
+      }
+
+      // Simulate loading
+      setTimeout(() => setLoading(false), 500)
+    }
+  }, [file?.id])
 
   // Keyboard navigation
   useEffect(() => {
@@ -83,12 +94,39 @@ export function FilePreview({ file, files = [], open, onOpenChange, onNavigate }
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [open, hasPrevious, hasNext, onNavigate, onOpenChange, handlePrevious, handleNext])
 
-  const handleDownload = () => {
-    // TODO: Implement actual download from Supabase Storage
-    const link = document.createElement('a')
-    link.href = file.url
-    link.download = file.name
-    link.click()
+  // Early return AFTER all hooks
+  if (!file) return null
+
+  const handleDownload = async () => {
+    if (!file.s3Key) {
+      console.error('No S3 key available for download')
+      alert('Unable to download file. File information is missing.')
+      return
+    }
+
+    try {
+      console.log('Downloading file:', file.name, 'S3 Key:', file.s3Key)
+
+      // Download file from S3
+      const blob = await downloadFile(file.s3Key)
+
+      // Create a download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = file.name
+      document.body.appendChild(link)
+      link.click()
+
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      console.log('File downloaded successfully')
+    } catch (error) {
+      console.error('Download failed:', error)
+      alert('Failed to download file. Please try again.')
+    }
   }
 
   const handlePrint = () => {
@@ -150,6 +188,15 @@ export function FilePreview({ file, files = [], open, onOpenChange, onNavigate }
 
     // Image Preview
     if (file.type.startsWith('image/')) {
+      if (!file.url) {
+        return (
+          <div className="flex flex-col items-center justify-center h-[600px] bg-slate-50 dark:bg-slate-900">
+            <div className="text-4xl mb-4">⚠️</div>
+            <p className="font-semibold mb-2">Image URL not available</p>
+            <p className="text-sm text-muted-foreground mb-4">The image URL is being loaded...</p>
+          </div>
+        )
+      }
       return (
         <div className="bg-slate-50 dark:bg-slate-900 h-[600px] flex items-center justify-center overflow-auto">
           <img
@@ -157,6 +204,11 @@ export function FilePreview({ file, files = [], open, onOpenChange, onNavigate }
             alt={file.name}
             className="max-w-full max-h-full object-contain"
             style={{ transform: `scale(${zoom / 100})` }}
+            onError={(e) => {
+              console.error('Image load error:', file.url)
+              setError('Failed to load image. The file may be corrupted or inaccessible.')
+            }}
+            onLoad={() => console.log('Image loaded successfully:', file.url)}
           />
         </div>
       )

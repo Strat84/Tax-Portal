@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -28,6 +29,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { MessageType } from '@/graphql/types/message'
 
 export default function ClientMessagesPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [newMessage, setNewMessage] = useState('')
@@ -49,6 +52,13 @@ export default function ClientMessagesPage() {
   })
   const { createMessage, loading: createMessageLoading } = useCreateMessage()
 
+  // Read conversation ID from URL on mount
+  useEffect(() => {
+    const conversationId = searchParams.get('conversation')
+    if (conversationId && !selectedConversation) {
+      setSelectedConversation(conversationId)
+    }
+  }, [searchParams, selectedConversation])
 
   // Transform API data to match UI structure
   const conversations = useMemo(() => {
@@ -283,6 +293,9 @@ export default function ClientMessagesPage() {
   const handleConversationClick = async (conversationId: string) => {
     // Set selected conversation immediately for better UX
     setSelectedConversation(conversationId)
+
+    // Update URL with conversation ID
+    router.push(`/messages?conversation=${conversationId}`, { scroll: false })
 
     // Find the original conversation data with PK and SK
     const originalConv = conversationsData?.find(conv => conv.conversationId === conversationId)
