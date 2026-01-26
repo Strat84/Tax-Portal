@@ -1,22 +1,21 @@
 'use client'
 
-import { useAllNotifications } from '@/hooks/useAllNotifications'
-import { Notification } from '@/types/notifications-general'
+import { useEffect, useRef, useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useNotifications } from '@/hooks/useNotification'
+import { NotificationItem } from '@/graphql/types/notification'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
-    case 'message':
+    case 'MESSAGE':
       return '💬'
-    case 'document':
+    case 'FILE':
       return '📄'
-    case 'system':
+    case 'SYSTEM':
       return '⚡'
-    case 'task':
-      return '✅'
     default:
       return '🔔'
   }
@@ -24,14 +23,12 @@ const getNotificationIcon = (type: string) => {
 
 const getNotificationTypeLabel = (type: string) => {
   switch (type) {
-    case 'message':
+    case 'MESSAGE':
       return 'Message'
-    case 'document':
-      return 'Document'
-    case 'system':
+    case 'FILE':
+      return 'File'
+    case 'SYSTEM':
       return 'System Alert'
-    case 'task':
-      return 'Task'
     default:
       return 'Notification'
   }
@@ -49,26 +46,108 @@ const formatTime = (dateString: string): string => {
   if (diffMins < 60) return `${diffMins}m ago`
   if (diffHours < 24) return `${diffHours}h ago`
   if (diffDays < 7) return `${diffDays}d ago`
-  
+
   return date.toLocaleDateString()
 }
 
-export default function NotificationsPage() {
-  const { notifications, unreadCount, loading } = useAllNotifications()
-  const router = useRouter()
+// Extract folder path from fullPath field for navigation
+// Example: private/userId/folder1/file.png -> userId/folder1/
+const extractFolderPathFromFullPath = (fullPath: string): string => {
+  // Remove 'private/' prefix
+  let path = fullPath.replace(/^private\//, '')
 
-  const handleNotificationClick = (notification: Notification) => {
+  // Remove filename (last part after last /)
+  const lastSlashIndex = path.lastIndexOf('/')
+  if (lastSlashIndex !== -1) {
+    path = path.substring(0, lastSlashIndex + 1) // Keep the trailing slash
+  }
+
+  return path
+}
+
+export default function NotificationsPage() {
+  const { user } = useAuth()
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    fetchNotifications,
+    loadMore,
+    hasMore,
+    updateNotification,
+    setNotifications
+  } = useNotifications(user?.id)
+  const router = useRouter()
+  const [loadingMore, setLoadingMore] = useState(false)
+  const observerTarget = useRef<HTMLDivElement>(null)
+
+  // Fetch initial 10 notifications
+  useEffect(() => {
+    if (user?.id) {
+      fetchNotifications(10)
+    }
+  }, [user?.id, fetchNotifications])
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!observerTarget.current || !hasMore || loading) return
+
+    const observer = new IntersectionObserver(
+      async (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          setLoadingMore(true)
+          try {
+            await loadMore()
+          } catch (err) {
+            console.error('Failed to load more notifications:', err)
+          } finally {
+            setLoadingMore(false)
+          }
+        }
+      },
+      { threshold: 1.0 }
+    )
+
+    observer.observe(observerTarget.current)
+
+    return () => observer.disconnect()
+  }, [hasMore, loading, loadingMore, loadMore])
+
+  const handleNotificationClick = async (notification: NotificationItem) => {
+    // Update notification to SEEN if it's UNSEEN
+    if (notification.isSeenStatus === 'UNSEEN') {
+      try {
+        await updateNotification(notification.PK, notification.SK, 'SEEN')
+
+        // Update local state immediately to reflect the change
+        setNotifications(prev =>
+          prev.map(n =>
+            n.notificationId === notification.notificationId
+              ? { ...n, isSeenStatus: 'SEEN' as const }
+              : n
+          )
+        )
+      } catch (err) {
+        console.error('Failed to update notification:', err)
+      }
+    }
+
+    // Handle navigation based on notification type
     switch (notification.type) {
-      case 'message':
-        router.push(`/dashboard/messages?conversation=${notification.metadata?.conversationId}`)
+      case 'MESSAGE':
+        if (notification.conversationId) {
+          router.push(`/messages?conversation=${notification.conversationId}`)
+        }
         break
-      case 'document':
-        router.push(`/dashboard/documents?id=${notification.metadata?.documentId}`)
+      case 'FILE':
+        if (notification.fullPath) {
+          // Extract folder path from fullPath field
+          // fullPath: private/userId/folder1/file.png -> userId/folder1/
+          const folderPath = extractFolderPathFromFullPath(notification.fullPath)
+          router.push(`/documents/${folderPath}`)
+        }
         break
-      case 'task':
-        router.push(`/dashboard/tasks?id=${notification.metadata?.taskId}`)
-        break
-      case 'system':
+      case 'SYSTEM':
         // System notifications stay on this page
         break
       default:
@@ -76,8 +155,9 @@ export default function NotificationsPage() {
     }
   }
 
-  const unreadNotifications = notifications.filter(n => n.status === 'unread')
-  const readNotifications = notifications.filter(n => n.status === 'read')
+  // Group notifications by seen status
+  const unreadNotifications = notifications.filter(n => n.isSeenStatus === 'UNSEEN')
+  const readNotifications = notifications.filter(n => n.isSeenStatus === 'SEEN')
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -131,7 +211,7 @@ export default function NotificationsPage() {
                 <div className="space-y-3">
                   {unreadNotifications.map((notification) => (
                     <NotificationCard
-                      key={notification.id}
+                      key={notification.notificationId}
                       notification={notification}
                       onClick={() => handleNotificationClick(notification)}
                     />
@@ -149,12 +229,28 @@ export default function NotificationsPage() {
                 <div className="space-y-3">
                   {readNotifications.map((notification) => (
                     <NotificationCard
-                      key={notification.id}
+                      key={notification.notificationId}
                       notification={notification}
                       onClick={() => handleNotificationClick(notification)}
                     />
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Infinite scroll loader */}
+            {hasMore && (
+              <div ref={observerTarget} className="flex items-center justify-center py-8">
+                {loadingMore && (
+                  <div className="text-center">
+                    <div className="inline-block animate-spin">
+                      <div className="w-6 h-6 border-3 border-slate-200 dark:border-slate-700 border-t-blue-500 rounded-full" />
+                    </div>
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                      Loading more...
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -168,17 +264,17 @@ function NotificationCard({
   notification,
   onClick,
 }: {
-  notification: Notification
+  notification: NotificationItem
   onClick: () => void
 }) {
-  const isClickable = notification.type !== 'system'
+  const isClickable = notification.type !== 'SYSTEM'
 
   return (
     <button
       onClick={onClick}
       disabled={!isClickable}
       className={`w-full p-4 rounded-lg border transition-all duration-200 ${
-        notification.status === 'unread'
+        notification.isSeenStatus === 'UNSEEN'
           ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
           : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
       } ${
@@ -192,7 +288,7 @@ function NotificationCard({
         <div className="flex-shrink-0 flex items-center pt-1">
           <div
             className={`w-3 h-3 rounded-full ${
-              notification.status === 'unread' ? 'bg-blue-500' : 'bg-slate-400'
+              notification.isSeenStatus === 'UNSEEN' ? 'bg-blue-500' : 'bg-slate-400'
             }`}
           />
         </div>
@@ -224,7 +320,7 @@ function NotificationCard({
 
           {/* Timestamp */}
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-            {formatTime(notification.timestamp)}
+            {formatTime(notification.createdAt)}
           </p>
         </div>
 
