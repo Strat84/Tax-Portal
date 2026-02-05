@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { uploadMultipleFilesToS3, UploadProgress } from '@/lib/storage/fileUpload'
 import { useCreateFile } from '@/hooks/useFileQuery'
+import { useUpdateDocumentRequest } from '@/hooks/useDocumentRequests'
 
 interface FileUploadProps {
   userId: string
@@ -16,6 +17,8 @@ interface FileUploadProps {
   maxSize?: number // in MB
   multiple?: boolean
   maxFiles?: number
+  documentRequestId?: string
+  documentRequestSK?: string
 }
 
 export function FileUpload({
@@ -25,7 +28,9 @@ export function FileUpload({
   accept = '*',
   maxSize = 50,
   multiple = true,
-  maxFiles = 5
+  maxFiles = 5,
+  documentRequestId,
+  documentRequestSK
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -34,6 +39,7 @@ export function FileUpload({
 
   // Use custom hook for creating file entries
   const { createFile } = useCreateFile()
+  const { updateRequest } = useUpdateDocumentRequest()
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -168,6 +174,21 @@ export function FileUpload({
           size: result.size,
           mimeType: result.mimeType,
         })
+      }
+
+      // Update document request status if documentRequestId exists
+      if (documentRequestId && documentRequestSK) {
+        try {
+          await updateRequest({
+            PK: `USER#${userId}`,
+            SK: documentRequestSK,
+            status: 'UPLOADED',
+            fulfilledAt: new Date().toISOString()
+          })
+        } catch (error) {
+          console.error('Failed to update document request status:', error)
+          // Don't throw error here, upload was successful
+        }
       }
 
       // Clear files after successful upload

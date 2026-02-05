@@ -19,6 +19,8 @@ query searchFiles($searchTerm: String!, $userId: ID, $limit: Int, $nextToken: St
       type
       totalFiles
       updatedAt
+      documentRequestId
+      documentRequestSK
     }
   }
 }
@@ -45,6 +47,8 @@ query getFolder($limit: Int, $userId: ID, $nextToken: String, $parentPath: Strin
       type
       totalFiles
       updatedAt
+      documentRequestId
+      documentRequestSK
     }
     nextToken
   }

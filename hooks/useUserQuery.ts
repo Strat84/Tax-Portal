@@ -1,10 +1,11 @@
 'use client'
 
 import { gqlClient } from '@/lib/appsync/client'
-import { GET_CURRENT_USER, UPDATE_USER_PROFILE, LIST_USER } from '@/graphql/queries/user'
+import { GET_CURRENT_USER, LIST_USER } from '@/graphql/queries/user'
 import { User, GetUserResponse, UpdateUserResponse } from '@/graphql/types/users'
 import { GraphQLResult } from '@aws-amplify/api-graphql'
 import { useEffect, useState } from 'react'
+import { UPDATE_USER_PROFILE } from '@/graphql/mutation/user'
 
 // Hook for getting current user
 export default function useCurrentUser() {
@@ -54,6 +55,12 @@ export function useUpdateUserProfile() {
   const updateProfile = async (input: {
     name?: string
     phone?: string
+    address?: string
+    ssn?: string
+    taxYear?: string
+    filingStatus?: string
+    numberOfDependents?: number
+    taxReturnStatus?: string
     profile?: Record<string, any>
   }) => {
     setLoading(true)
