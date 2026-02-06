@@ -26,6 +26,9 @@ export interface User {
   filingStatus?: string
   numberOfDependents?: number
   taxReturnStatus?: TaxReturnStatus
+  pendingRequest?: number
+  unreadMessages?: number
+  documentsUploaded?: number
 }
 
 // GraphQL Response Types

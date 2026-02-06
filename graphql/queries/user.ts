@@ -1,3 +1,24 @@
+export const GET_CLIENT_USER = `
+  query getUser{
+    getUser{
+        id
+        documentsUploaded
+        pendingRequest
+        unreadMessages
+    }
+  }
+`
+
+export const GET_TAX_PRO_USER = `
+  query getUser{
+    getUser{
+        id
+        totalClients
+        pendingRequest
+        unreadMessages
+    }
+  }
+`
 
 export const GET_CURRENT_USER = `
   query getUser {
@@ -22,6 +43,9 @@ export const GET_CURRENT_USER = `
         taxYear
         filingStatus
         numberOfDependents
+        pendingRequest
+        unreadMessages
+        documentsUploaded
     }
   }
 `
@@ -51,6 +75,10 @@ export const LIST_USER = `
         taxYear
         filingStatus
         numberOfDependents
+        pendingRequest
+        unreadMessages
+        documentsUploaded
+    
       }
       nextToken
     }

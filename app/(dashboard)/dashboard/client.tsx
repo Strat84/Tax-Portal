@@ -9,10 +9,27 @@ import { useFetchTaxProRequests } from '@/hooks/useDocumentRequests'
 import { useEffect, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { TaxReturnStatus } from '@/graphql/types/users'
+import { useClientUserStats } from '@/hooks/useUserQuery'
+import useConversations from '@/hooks/useConversations'
+import { useConversationMessages } from '@/hooks/useMessages'
 
 export default function ClientDashboard() {
   const { user } = useAuth()
   const { requests, loading: requestsLoading, error: requestsError, fetchRequests } = useFetchTaxProRequests()
+  const { stats: clientStats, loading: statsLoading } = useClientUserStats()
+  const { conversations, loading: conversationsLoading } = useConversations()
+
+  // Get the first conversation (most recent)
+  const firstConversation = useMemo(() => {
+    if (!conversations || conversations.length === 0) return null
+    return conversations[0]
+  }, [conversations])
+
+  // Fetch messages from the first conversation
+  const { messages: conversationMessages, loading: messagesLoading } = useConversationMessages({
+    conversationId: firstConversation?.conversationId || null,
+    limit: 5
+  })
 
   useEffect(() => {
     fetchRequests(5)
@@ -36,29 +53,49 @@ export default function ClientDashboard() {
     return statusSteps.findIndex(step => step.key === currentStatus)
   }, [currentStatus])
 
-  const recentMessages = [
-    {
-      id: '1',
-      from: 'Sarah Johnson',
-      subject: 'Updated tax forms available',
-      preview: 'I have uploaded your completed tax forms to the portal...',
-      date: '2 hours ago',
-      unread: true,
-    },
-    {
-      id: '2',
-      from: 'Sarah Johnson',
-      subject: 'Additional documents needed',
-      preview: 'Could you please provide your 1099-INT form...',
-      date: '1 day ago',
-      unread: false,
-    },
-  ]
+  // Transform messages for the dashboard - only show messages from tax professional
+  const recentMessages = useMemo(() => {
+    if (!conversationMessages || !user || conversationMessages.length === 0) return []
+
+    // Filter out current user's messages - only show messages from tax professional
+    const otherUserMessages = conversationMessages.filter(msg => msg.senderId !== user.id)
+
+    // Get the latest 2 messages from tax professional
+    return otherUserMessages.slice(0, 2).map((msg) => {
+      const sender = msg.sender || msg.receiver
+      const senderName = sender?.name || 'Tax Professional'
+
+      // Format timestamp
+      const msgDate = new Date(msg.timestamp)
+      const now = new Date()
+      const diffMs = now.getTime() - msgDate.getTime()
+      const diffMins = Math.floor(diffMs / 60000)
+      const diffHours = Math.floor(diffMs / 3600000)
+      const diffDays = Math.floor(diffMs / 86400000)
+
+      let dateStr = ''
+      if (diffMins < 1) dateStr = 'Just now'
+      else if (diffMins < 60) dateStr = `${diffMins} min${diffMins > 1 ? 's' : ''} ago`
+      else if (diffHours < 24) dateStr = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+      else if (diffDays === 1) dateStr = '1 day ago'
+      else if (diffDays < 7) dateStr = `${diffDays} days ago`
+      else dateStr = msgDate.toLocaleDateString()
+
+      return {
+        id: msg.messageId,
+        from: senderName,
+        subject: msg.messageType === 'IMAGE' ? '📷 Image attachment' : 'Message',
+        preview: msg.content || 'Sent an attachment',
+        date: dateStr,
+        unread: msg.isSeenStatus === 'UNSEEN',
+      }
+    })
+  }, [conversationMessages, user])
 
   const stats = [
-    { label: 'Documents Uploaded', value: '12', icon: '📄' },
-    { label: 'Messages', value: '8', icon: '💬' },
-    { label: 'Pending Requests', value: '2', icon: '⏳' },
+    { label: 'Documents Uploaded', value: clientStats?.documentsUploaded?.toString() || '0', icon: '📄' },
+    { label: 'Messages', value: clientStats?.unreadMessages?.toString() || '0', icon: '💬' },
+    { label: 'Pending Requests', value: clientStats?.pendingRequest?.toString() || '0', icon: '⏳' },
     { label: 'Days Until Deadline', value: '45', icon: '📅' },
   ]
 
@@ -225,36 +262,46 @@ export default function ClientDashboard() {
             <CardDescription>Latest messages from your tax professional</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
-                    message.unread ? 'bg-blue-50 dark:bg-blue-950/20' : ''
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">{message.from}</p>
-                      {message.unread && (
-                        <Badge variant="default" className="text-xs">New</Badge>
-                      )}
+            {messagesLoading || conversationsLoading ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Loading messages...</p>
+              </div>
+            ) : recentMessages.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No messages yet</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                      message.unread ? 'bg-blue-50 dark:bg-blue-950/20' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm">{message.from}</p>
+                        {/* {message.unread && (
+                          <Badge variant="default" className="text-xs">New</Badge>
+                        )} */}
+                      </div>
+                      <span className="text-xs text-muted-foreground">{message.date}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">{message.date}</span>
+                    <p className="text-sm font-medium mb-1">{message.subject}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {message.preview}
+                    </p>
                   </div>
-                  <p className="text-sm font-medium mb-1">{message.subject}</p>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {message.preview}
-                  </p>
-                </div>
-              ))}
-
-              <Link href="/client/messages">
-                <Button className="w-full" variant="outline">
-                  View All Messages
-                </Button>
-              </Link>
-            </div>
+                ))}
+                
+                <Link href={`/messages/?conversation=${firstConversation?.conversationId ?? ''}`}>
+                  <Button className="w-full" variant="outline">
+                    View All Messages
+                  </Button>
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -267,7 +314,7 @@ export default function ClientDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <Link href="/client/documents">
+            <Link href="/documents/${userId}">
               <Button variant="outline" className="w-full h-auto flex-col items-start p-4">
                 <svg
                   className="h-8 w-8 mb-2 text-primary"
@@ -287,7 +334,7 @@ export default function ClientDashboard() {
               </Button>
             </Link>
 
-            <Link href="/client/messages">
+            <Link href="/messages">
               <Button variant="outline" className="w-full h-auto flex-col items-start p-4">
                 <svg
                   className="h-8 w-8 mb-2 text-primary"
@@ -307,7 +354,7 @@ export default function ClientDashboard() {
               </Button>
             </Link>
 
-            <Link href="/client/documents">
+            <Link href="/documents">
               <Button variant="outline" className="w-full h-auto flex-col items-start p-4">
                 <svg
                   className="h-8 w-8 mb-2 text-primary"

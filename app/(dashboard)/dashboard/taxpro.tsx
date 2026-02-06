@@ -11,11 +11,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useListUsers } from '@/hooks/useUserQuery'
+import { useListUsers, useTaxProUserStats } from '@/hooks/useUserQuery'
 import { useMemo } from 'react'
 
 export default function TaxProDashboard() {
   const { users, loading, error } = useListUsers()
+  console.log("tax pro list users ::", users);
+  
+  const { stats: taxProStats, loading: statsLoading } = useTaxProUserStats()
 
   // Filter only CLIENT role users and sort by updatedAt
   const clients = useMemo(() => {
@@ -27,19 +30,19 @@ export default function TaxProDashboard() {
   }, [users])
 
   // Calculate stats from actual data
-  const totalClients = clients.length
+  const totalClients = taxProStats?.totalClients || 0
   const activeReturns = clients.filter(client =>
     client.taxReturnStatus &&
     ['IN_PROGRESS', 'READY_FOR_REVIEW', 'DOCUMENTS_RECEIVED'].includes(client.taxReturnStatus)
   ).length
-  const pendingRequests = clients.reduce((sum, client) => sum + (client.pendingRequest || 0), 0)
-  const unreadMessages = clients.reduce((sum, client) => sum + (client.unreadMessages || 0), 0)
+  const pendingRequests = taxProStats?.pendingRequest || 0
+  const unreadMessages = taxProStats?.unreadMessages || 0
 
   const stats = [
-    { label: 'Total Clients', value: totalClients.toString(), change: `${totalClients} total`, icon: '👥' },
-    { label: 'Active Returns', value: activeReturns.toString(), change: `${activeReturns} in progress`, icon: '📋' },
-    { label: 'Pending Requests', value: pendingRequests.toString(), change: `${pendingRequests} total`, icon: '⏳' },
-    { label: 'Unread Messages', value: unreadMessages.toString(), change: `From ${clients.filter(c => c.unreadMessages > 0).length} clients`, icon: '💬' },
+    { label: 'Total Clients', value: totalClients.toString(), change: ``, icon: '👥' },
+    { label: 'Active Returns', value: activeReturns.toString(), change: ``, icon: '📋' },
+    { label: 'Pending Requests', value: pendingRequests.toString(), change: ``, icon: '⏳' },
+    { label: 'Unread Messages', value: unreadMessages.toString(), change: ``, icon: '💬' },
   ]
 
   // Helper function to format last activity

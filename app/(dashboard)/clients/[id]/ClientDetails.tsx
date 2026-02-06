@@ -631,6 +631,7 @@ export default function ClientDetailPage({ id }: PageProps) {
     lastActivity: getLastActivity(clientData.updatedAt),
     pendingDocs: clientData.pendingRequest || 0,
     unreadMessages: clientData.unreadMessages || 0,
+    documentsUploaded: clientData.documentsUploaded || 0
   } : null
 
   // Loading state
@@ -754,7 +755,7 @@ export default function ClientDetailPage({ id }: PageProps) {
         <Card>
           <CardContent className="p-4">
             <div className="text-sm text-muted-foreground">Documents Uploaded</div>
-            <div className="text-2xl font-bold mt-1">{allFilesCount}</div>
+            <div className="text-2xl font-bold mt-1">{client.documentsUploaded}</div>
           </CardContent>
         </Card>
         <Card>
