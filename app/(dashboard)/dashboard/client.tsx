@@ -36,7 +36,7 @@ export default function ClientDashboard() {
   }, [fetchRequests])
 
   // Get current user's tax return status
-  const currentStatus: TaxReturnStatus = user?.taxReturnStatus || 'DOCUMENTS_PENDING'
+  const currentStatus: TaxReturnStatus = (user?.taxReturnStatus as TaxReturnStatus) || 'DOCUMENTS_PENDING'
 
   // Define status steps in order
   const statusSteps: { key: TaxReturnStatus; label: string }[] = [

@@ -58,6 +58,7 @@ interface User {
   phone?: string
   isActive: boolean
   status?: UserStatus
+  taxReturnStatus?: string
 }
 
 interface AuthContextType {
