@@ -24,7 +24,7 @@ export default function useCurrentUser() {
       setLoading(false)
       return result.data
     } catch (err) {
-      setError(err)
+      // setError(err)
       setLoading(false)
       throw err
     }
