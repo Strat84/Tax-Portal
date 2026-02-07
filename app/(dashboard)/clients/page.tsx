@@ -21,11 +21,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useListUsers } from '@/hooks/useUserQuery'
+import { useListUsers, useTaxProUserStats } from '@/hooks/useUserQuery'
 import { formatRelativeTime } from '@/lib/utils'
 
 export default function TaxProClientsPage() {
   const { users, loading, loadingMore, loadMore, hasMore } = useListUsers(10)
+  const { stats: taxProStats } = useTaxProUserStats()
   const observerTarget = useRef<HTMLDivElement>(null)
 
   // Intersection Observer for infinite scroll
@@ -56,12 +57,13 @@ export default function TaxProClientsPage() {
     id: user.id,
     name: user.name,
     email: user.email,
-    status: 'in_progress', // Static for now
-    pendingDocs: 2, // Static for now
-    unreadMessages: 1, // Static for now
+    status: user.role, // Static for now
     lastActivity: formatRelativeTime(user.lastActiveAt),
     taxYear: 2025, // Static for now
     phone: user.phone || 'N/A',
+    pendingDocs: user.pendingRequest ,
+    unreadMessages: user.unreadMessages
+
   })) || []
 
   const statusColors: Record<string, string> = {
@@ -83,7 +85,7 @@ export default function TaxProClientsPage() {
   }
 
   const stats = [
-    { label: 'Total Clients', value: '24', icon: '👥' },
+    { label: 'Total Clients', value: taxProStats?.totalClients?.toString() || '0', icon: '👥' },
     { label: 'Active Returns', value: '12', icon: '📋' },
     { label: 'Needs Attention', value: '5', icon: '⚠️' },
     { label: 'Completed', value: '7', icon: '✅' },
@@ -232,14 +234,14 @@ export default function TaxProClientsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        {client.pendingDocs > 0 ? (
+                        {typeof client.pendingDocs === "number" && client.pendingDocs > 0 ? (
                           <Badge variant="destructive">{client.pendingDocs}</Badge>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        {client.unreadMessages > 0 ? (
+                        {typeof client.unreadMessages === "number" && client.unreadMessages > 0 ? (
                           <Badge variant="default">{client.unreadMessages}</Badge>
                         ) : (
                           <span className="text-muted-foreground">-</span>

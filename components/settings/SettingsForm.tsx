@@ -11,10 +11,20 @@ interface SettingsFormProps {
   initialName?: string
   initialEmail?: string
   initialPhone?: string
+  initialAddress?: string
+  initialSsn?: string
+  initialTaxYear?: string
+  initialFilingStatus?: string
+  initialNumberOfDependents?: number
   onUpdate?: (formData: {
     name: string
     email: string
     phone: string
+    address?: string
+    ssn?: string
+    taxYear?: string
+    filingStatus?: string
+    numberOfDependents?: number
   }) => Promise<any>
 }
 
@@ -22,6 +32,11 @@ export function SettingsForm({
   initialName = '',
   initialEmail = '',
   initialPhone = '',
+  initialAddress = '',
+  initialSsn = '',
+  initialTaxYear = '',
+  initialFilingStatus = '',
+  initialNumberOfDependents = 0,
   onUpdate,
 }: SettingsFormProps) {
   // Format initial phone to display format if it exists
@@ -51,10 +66,36 @@ export function SettingsForm({
     return formatted
   }
 
+  // Format SSN to display format (XXX-XX-XXXX)
+  const formatSsnForDisplay = (ssn: string): string => {
+    if (!ssn) return ''
+    // Extract only digits
+    const digitsOnly = ssn.replace(/\D/g, '')
+    if (digitsOnly.length === 0) return ''
+
+    // Format as XXX-XX-XXXX
+    let formatted = ''
+    if (digitsOnly.length > 0) {
+      formatted += digitsOnly.substring(0, 3)
+      if (digitsOnly.length > 3) {
+        formatted += '-' + digitsOnly.substring(3, 5)
+        if (digitsOnly.length > 5) {
+          formatted += '-' + digitsOnly.substring(5, 9)
+        }
+      }
+    }
+    return formatted
+  }
+
   const [formData, setFormData] = useState({
     name: initialName,
     email: initialEmail,
     phone: formatPhoneForDisplay(initialPhone),
+    address: initialAddress,
+    ssn: formatSsnForDisplay(initialSsn),
+    taxYear: initialTaxYear,
+    filingStatus: initialFilingStatus,
+    numberOfDependents: initialNumberOfDependents,
   })
   const [isLoading, setIsLoading] = useState(false)
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
@@ -103,6 +144,33 @@ export function SettingsForm({
       setFormData(prev => ({
         ...prev,
         phone: formattedPhone
+      }))
+    } else if (name === 'ssn') {
+      // Handle SSN input - format as XXX-XX-XXXX
+      const digitsOnly = value.replace(/\D/g, '')
+      const limitedDigits = digitsOnly.substring(0, 9) // Keep only 9 digits
+
+      let formattedSsn = ''
+      if (limitedDigits.length > 0) {
+        formattedSsn += limitedDigits.substring(0, 3)
+        if (limitedDigits.length > 3) {
+          formattedSsn += '-' + limitedDigits.substring(3, 5)
+          if (limitedDigits.length > 5) {
+            formattedSsn += '-' + limitedDigits.substring(5, 9)
+          }
+        }
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        ssn: formattedSsn
+      }))
+    } else if (name === 'numberOfDependents') {
+      // Handle number input
+      const numValue = parseInt(value) || 0
+      setFormData((prev) => ({
+        ...prev,
+        numberOfDependents: numValue < 0 ? 0 : numValue,
       }))
     } else {
       setFormData((prev) => ({
@@ -162,10 +230,19 @@ export function SettingsForm({
 
       // Call the onUpdate callback if provided
       if (onUpdate) {
+        // Format SSN to backend format (remove dashes)
+        const ssnForBackend = formData.ssn ? formData.ssn.replace(/\D/g, '') : undefined
+
         // Use formatted phone number (E.164 format) for backend
         await onUpdate({
-          ...formData,
-          phone: phoneValidation.formatted || formData.phone
+          name: formData.name,
+          email: formData.email,
+          phone: phoneValidation.formatted || formData.phone,
+          address: formData.address,
+          ssn: ssnForBackend,
+          taxYear: formData.taxYear,
+          filingStatus: formData.filingStatus,
+          numberOfDependents: formData.numberOfDependents,
         })
       } else {
         // Fallback: simulate API call
@@ -185,7 +262,7 @@ export function SettingsForm({
   }
 
   return (
-    <Card className="w-full max-w-md p-6">
+    <Card className="w-full max-w-2xl p-6">
       <h2 className="text-2xl font-bold mb-6">Update Profile</h2>
 
       {status !== 'idle' && (
@@ -205,48 +282,129 @@ export function SettingsForm({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Name Field */}
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            name="name"
-            type="text"
-            placeholder="Enter your name"
-            value={formData.name}
-            onChange={handleChange}
-            disabled={isLoading}
-          />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Personal Information Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold border-b pb-2">Personal Information</h3>
+
+          {/* Name Field */}
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              placeholder="Enter your name"
+              value={formData.name}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Email Field (Disabled) */}
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="your@email.com"
+              value={formData.email}
+              disabled
+              className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+            />
+            <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+          </div>
+
+          {/* Phone Field */}
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone (optional)</Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              placeholder="+1 (787) 878-7878"
+              value={formData.phone}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Address Field */}
+          <div className="space-y-2">
+            <Label htmlFor="address">Address (optional)</Label>
+            <Input
+              id="address"
+              name="address"
+              type="text"
+              placeholder="Enter your address"
+              value={formData.address}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* SSN Field */}
+          <div className="space-y-2">
+            <Label htmlFor="ssn">SSN (optional)</Label>
+            <Input
+              id="ssn"
+              name="ssn"
+              type="text"
+              placeholder="123-45-6789"
+              value={formData.ssn}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+          </div>
         </div>
 
-        {/* Email Field (Disabled) */}
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="your@email.com"
-            value={formData.email}
-            disabled
-            className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
-          />
-          <p className="text-xs text-muted-foreground">Email cannot be changed</p>
-        </div>
+        {/* Tax Information Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold border-b pb-2">Tax Information</h3>
 
-        {/* Phone Field */}
-        <div className="space-y-2">
-          <Label htmlFor="phone">Phone (optional)</Label>
-          <Input
-            id="phone"
-            name="phone"
-            type="tel"
-            placeholder="+1 (787) 878-7878"
-            value={formData.phone}
-            onChange={handleChange}
-            disabled={isLoading}
-          />
+          {/* Tax Year Field */}
+          <div className="space-y-2">
+            <Label htmlFor="taxYear">Tax Year (optional)</Label>
+            <Input
+              id="taxYear"
+              name="taxYear"
+              type="text"
+              placeholder="2024"
+              value={formData.taxYear}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Filing Status Field */}
+          <div className="space-y-2">
+            <Label htmlFor="filingStatus">Filing Status (optional)</Label>
+            <Input
+              id="filingStatus"
+              name="filingStatus"
+              type="text"
+              placeholder="Single, Married, etc."
+              value={formData.filingStatus}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Number of Dependents Field */}
+          <div className="space-y-2">
+            <Label htmlFor="numberOfDependents">Number of Dependents</Label>
+            <Input
+              id="numberOfDependents"
+              name="numberOfDependents"
+              type="number"
+              min="0"
+              placeholder="0"
+              value={formData.numberOfDependents}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+          </div>
         </div>
 
         {/* Submit Button */}

@@ -8,7 +8,7 @@ import { gqlClient } from '@/lib/appsync/client'
 import { GET_CURRENT_USER } from '@/graphql/queries/user'
 import useUserPresence, { UserStatus } from '@/hooks/useUserPresence'
 import useUserStatus from '@/hooks/useUserStatus'
-import { GetUserResponse } from '@/graphql/types/users'
+import { GetUserResponse, TaxReturnStatus } from '@/graphql/types/users'
 import { GraphQLResult } from '@aws-amplify/api-graphql'
 
 // TEMPORARY: Set to true to bypass authentication for UI testing
@@ -58,6 +58,7 @@ interface User {
   phone?: string
   isActive: boolean
   status?: UserStatus
+  taxReturnStatus?: string
 }
 
 interface AuthContextType {
@@ -138,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             phone: userData.phone,
             isActive: userData.isActive,
             status: userData.status as UserStatus,
+            taxReturnStatus: userData.taxReturnStatus as TaxReturnStatus,
           })
         } else {
           // Fallback to token data if GraphQL fails
@@ -148,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             name: extracted.name || extracted.email,
             role: extracted.role as 'ADMIN' | 'TAX_PRO' | 'CLIENT',
             phone: undefined,
-            isActive: true,
+            isActive: true
           })
         }
       } catch (gqlError) {

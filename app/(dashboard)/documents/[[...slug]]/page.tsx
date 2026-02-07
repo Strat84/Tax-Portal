@@ -43,6 +43,9 @@ interface FolderItem {
   fileType?: string
   s3Key?: string
   totalFiles?: number
+  documentRequestId?: string
+  documentRequestPK?: string
+  documentRequestSK?: string
 }
 
 function normalizePath(path: string) {
@@ -158,6 +161,9 @@ function DocumentsView({
         fileType: item.mimeType || item.fileType,
         s3Key: item.s3Key,
         totalFiles: item.totalFiles,
+        documentRequestId: item.documentRequestId,
+        documentRequestPK: item.documentRequestPK,
+        documentRequestSK: item.documentRequestSK,
       }
     })
   }, [activeFiles])
@@ -202,6 +208,29 @@ function DocumentsView({
   }, [items, previewOpen])
 
   const currentItems = isSearching ? items : items.filter(item => item.path === currentPath)
+
+  // Get the current folder's document request info by looking at the parent level
+  const currentFolderDocumentRequest = useMemo(() => {
+    if (currentSegments.length === 0) return { id: undefined, PK: undefined, SK: undefined }
+
+    // Get the parent path to find the current folder in the parent's items
+    const parentSegments = currentSegments.slice(0, -1)
+    const parentPath = parentSegments.length === 0 ? '/' : normalizePath(parentSegments.join('/'))
+    const currentFolderName = currentSegments[currentSegments.length - 1]
+
+    // Find the current folder in the items
+    const currentFolder = items.find(
+      item => item.type === 'FOLDER' &&
+              item.name === currentFolderName &&
+              item.path === parentPath
+    )
+
+    return {
+      id: currentFolder?.documentRequestId,
+      PK: currentFolder?.documentRequestPK,
+      SK: currentFolder?.documentRequestSK
+    }
+  }, [items, currentSegments])
 
   const getBreadcrumbs = () => {
     if (isSearching) {
@@ -555,6 +584,8 @@ function DocumentsView({
                     memoizedFetchFiles(currentPathForApi)
                   }}
                   maxFiles={5}
+                  documentRequestId={currentFolderDocumentRequest.id}
+                  documentRequestSK={currentFolderDocumentRequest.SK}
                 />
               </DialogContent>
             </Dialog>
@@ -669,7 +700,7 @@ function DocumentsView({
                   onDoubleClick={() => handleItemDoubleClick(item)}
                   className="group border border-slate-200 dark:border-slate-700 rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-slate-800 hover:shadow-md transition-all cursor-pointer relative"
                 >
-                  {!isTaxProViewingClient && (
+                  {!isTaxProViewingClient && !(item.type === 'FOLDER' && item.documentRequestId) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -684,11 +715,17 @@ function DocumentsView({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation()
-                          handleRenameItem(item)
-                        }}>Rename</DropdownMenuItem>
-                        <DropdownMenuItem>Move</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleRenameItem(item)
+                          }}
+                        >
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          Move
+                        </DropdownMenuItem>
                         {item.type === 'FILE' && <DropdownMenuItem>Download</DropdownMenuItem>}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -753,7 +790,7 @@ function DocumentsView({
                       </div>
                     </div>
                   </div>
-                  {!isTaxProViewingClient && (
+                  {!isTaxProViewingClient && !(item.type === 'FOLDER' && item.documentRequestId) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
@@ -763,11 +800,17 @@ function DocumentsView({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation()
-                          handleRenameItem(item)
-                        }}>Rename</DropdownMenuItem>
-                        <DropdownMenuItem>Move</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleRenameItem(item)
+                          }}
+                        >
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          Move
+                        </DropdownMenuItem>
                         {item.type === 'FILE' && <DropdownMenuItem>Download</DropdownMenuItem>}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem

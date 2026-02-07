@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { UPDATE_USER_PROFILE, SUBSCRIBE_USER_STATUS } from '@/graphql/queries/user'
+import { SUBSCRIBE_USER_STATUS } from '@/graphql/queries/user'
 import { UserStatus, UpdateUserResponse } from '@/graphql/types/users'
 import { gqlClient } from '@/lib/appsync/client'
 import { GraphQLResult } from '@aws-amplify/api-graphql'
+import { UPDATE_USER_PROFILE } from '@/graphql/mutation/user'
 
 /**
  * Hook for GraphQL integration of user status

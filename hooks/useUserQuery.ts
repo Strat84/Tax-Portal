@@ -1,10 +1,11 @@
 'use client'
 
 import { gqlClient } from '@/lib/appsync/client'
-import { GET_CURRENT_USER, UPDATE_USER_PROFILE, LIST_USER } from '@/graphql/queries/user'
+import { GET_CURRENT_USER, LIST_USER, GET_CLIENT_USER, GET_TAX_PRO_USER } from '@/graphql/queries/user'
 import { User, GetUserResponse, UpdateUserResponse } from '@/graphql/types/users'
 import { GraphQLResult } from '@aws-amplify/api-graphql'
 import { useEffect, useState } from 'react'
+import { UPDATE_USER_PROFILE } from '@/graphql/mutation/user'
 
 // Hook for getting current user
 export default function useCurrentUser() {
@@ -23,7 +24,7 @@ export default function useCurrentUser() {
       setLoading(false)
       return result.data
     } catch (err) {
-      setError(err)
+      // setError(err)
       setLoading(false)
       throw err
     }
@@ -54,6 +55,12 @@ export function useUpdateUserProfile() {
   const updateProfile = async (input: {
     name?: string
     phone?: string
+    address?: string
+    ssn?: string
+    taxYear?: string
+    filingStatus?: string
+    numberOfDependents?: number
+    taxReturnStatus?: string
     profile?: Record<string, any>
   }) => {
     setLoading(true)
@@ -156,5 +163,83 @@ export function useListUsers(limit?: number) {
     refetch,
     loadMore,
     hasMore: !!nextToken
+  }
+}
+
+// Hook for getting client user stats
+export function useClientUserStats() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<any>(null)
+
+  const fetchClientStats = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await gqlClient.graphql({
+        query: GET_CLIENT_USER
+      }) as GraphQLResult<GetUserResponse>
+      setData(result.data)
+      setLoading(false)
+      return result.data
+    } catch (err) {
+      setError(err)
+      setLoading(false)
+      throw err
+    }
+  }
+
+  useEffect(() => {
+    fetchClientStats()
+  }, [])
+
+  const refetch = async () => {
+    return await fetchClientStats()
+  }
+
+  return {
+    stats: data?.getUser,
+    loading,
+    error,
+    refetch
+  }
+}
+
+// Hook for getting tax pro user stats
+export function useTaxProUserStats() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<any>(null)
+
+  const fetchTaxProStats = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await gqlClient.graphql({
+        query: GET_TAX_PRO_USER
+      }) as GraphQLResult<GetUserResponse>
+      setData(result.data)
+      setLoading(false)
+      return result.data
+    } catch (err) {
+      setError(err)
+      setLoading(false)
+      throw err
+    }
+  }
+
+  useEffect(() => {
+    fetchTaxProStats()
+  }, [])
+
+  const refetch = async () => {
+    return await fetchTaxProStats()
+  }
+
+  return {
+    stats: data?.getUser,
+    loading,
+    error,
+    refetch
   }
 }

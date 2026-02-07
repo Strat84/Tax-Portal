@@ -1,5 +1,13 @@
 export type UserStatus = 'online' | 'away' | 'offline'
 
+export type TaxReturnStatus =
+  | 'DOCUMENTS_PENDING'
+  | 'DOCUMENTS_RECEIVED'
+  | 'IN_PROGRESS'
+  | 'READY_FOR_REVIEW'
+  | 'FILED'
+  | 'COMPLETE'
+
 export interface User {
   id: string
   email: string
@@ -7,11 +15,20 @@ export interface User {
   lastLogin: string
   lastActiveAt?: string
   name: string
-  phone : string
+  phone: string
   role: 'ADMIN' | 'TAX_PRO' | 'CLIENT'
   status?: UserStatus
-  createdAt : string
-  updatedAt : string
+  createdAt: string
+  updatedAt: string
+  address?: string
+  ssn?: string
+  taxYear?: string
+  filingStatus?: string
+  numberOfDependents?: number
+  taxReturnStatus?: TaxReturnStatus
+  pendingRequest?: number
+  unreadMessages?: number
+  documentsUploaded?: number
 }
 
 // GraphQL Response Types

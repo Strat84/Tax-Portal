@@ -27,6 +27,9 @@ interface FileItem {
   createdAt: string
   updatedAt: string
   isDeleted: boolean
+  documentRequestId?: string
+  documentRequestPK?: string
+  documentRequestSK?: string
 }
 
 interface GetFolderResponse {

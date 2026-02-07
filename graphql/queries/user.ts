@@ -1,55 +1,84 @@
+export const GET_CLIENT_USER = `
+  query getUser{
+    getUser{
+        id
+        documentsUploaded
+        pendingRequest
+        unreadMessages
+    }
+  }
+`
+
+export const GET_TAX_PRO_USER = `
+  query getUser{
+    getUser{
+        id
+        totalClients
+        pendingRequest
+        unreadMessages
+    }
+  }
+`
 
 export const GET_CURRENT_USER = `
   query getUser {
     getUser {
-        createdAt
-        email
-        id
-        isActive
-        lastLogin
-        lastActiveAt
-        name
+        updatedAt
+        unreadMessages
+        taxReturnStatus
+        status
+        ssn
         phone
         role
-        status
-        updatedAt
+        pendingRequest
+        name
+        lastLogin
+        lastActiveAt
+        isActive
+        id
+        email
+        documentsUploaded
+        createdAt
+        address
+        taxYear
+        filingStatus
+        numberOfDependents
+        pendingRequest
+        unreadMessages
+        documentsUploaded
     }
   }
 `
 
-export const UPDATE_USER_PROFILE = `
-  mutation updateUser($input: UpdateUserInput!) {
-    updateUser(input: $input) {
-      createdAt
-      email
-      id
-      isActive
-      lastLogin
-      lastActiveAt
-      name
-      phone
-      role
-      status
-      updatedAt
-    }
-  }
-`
 
 export const LIST_USER = `
   query listUsers($limit: Int, $nextToken: String){
     listUsers(limit: $limit, nextToken: $nextToken){
       items {
         updatedAt
+        unreadMessages
+        taxReturnStatus
         status
-        role
+        ssn
         phone
+        role
+        pendingRequest
         name
-        lastActiveAt
         lastLogin
+        lastActiveAt
         isActive
         id
         email
+        documentsUploaded
         createdAt
+        address 
+        taxYear
+        filingStatus
+        numberOfDependents
+        pendingRequest
+        unreadMessages
+        documentsUploaded
+    
       }
       nextToken
     }

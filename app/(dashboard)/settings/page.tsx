@@ -13,9 +13,22 @@ export default function ClientSettingsPage() {
     name: string
     email: string
     phone: string
+    address?: string
+    ssn?: string
+    taxYear?: string
+    filingStatus?: string
+    numberOfDependents?: number
   }) => {
     // Call Apollo mutation to update user profile and update cache
-    return await updateProfile({ name: formData.name, phone: formData.phone })
+    return await updateProfile({
+      name: formData.name,
+      phone: formData.phone,
+      address: formData.address,
+      ssn: formData.ssn,
+      taxYear: formData.taxYear,
+      filingStatus: formData.filingStatus,
+      numberOfDependents: formData.numberOfDependents,
+    })
   }
 
   if (loading) {
@@ -42,11 +55,16 @@ export default function ClientSettingsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-2xl">
         <SettingsForm
           initialName={user?.name || ''}
           initialEmail={user?.email || ''}
           initialPhone={user?.phone || ''}
+          initialAddress={user?.address || ''}
+          initialSsn={user?.ssn || ''}
+          initialTaxYear={user?.taxYear || ''}
+          initialFilingStatus={user?.filingStatus || ''}
+          initialNumberOfDependents={user?.numberOfDependents || 0}
           onUpdate={handleProfileUpdate}
         />
       </div>
