@@ -54,7 +54,6 @@ export function useUpdateUserProfile() {
 
   const updateProfile = async (input: {
     name?: string
-    lastname?: string
     phone?: string
     address?: string
     ssn?: string
