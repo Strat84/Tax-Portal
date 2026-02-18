@@ -12,7 +12,6 @@ export default function ClientSettingsPage() {
   const handleProfileUpdate = async (formData: {
     name: string
     email: string
-    lastname: string
     phone: string
     address?: string
     ssn?: string
@@ -23,7 +22,6 @@ export default function ClientSettingsPage() {
     // Call Apollo mutation to update user profile and update cache
     return await updateProfile({
       name: formData.name,
-      lastname: formData.lastname,
       phone: formData.phone,
       address: formData.address,
       ssn: formData.ssn,
@@ -60,7 +58,6 @@ export default function ClientSettingsPage() {
       <div className="w-full max-w-2xl">
         <SettingsForm
           initialName={user?.name || ''}
-          initialLastname={user?.lastname || ''}
           initialEmail={user?.email || ''}
           initialPhone={user?.phone || ''}
           initialAddress={user?.address || ''}

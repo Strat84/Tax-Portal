@@ -32,7 +32,6 @@ export const GET_CURRENT_USER = `
         role
         pendingRequest
         name
-        lastname
         lastLogin
         lastActiveAt
         isActive
