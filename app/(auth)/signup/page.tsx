@@ -16,7 +16,8 @@ export default function SignupPage() {
   const router = useRouter()
 
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '+1 ',
     password: '',
@@ -142,7 +143,8 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const result = await signUp(
         normalizedEmail,
         formData.password,
-        formData.name,
+        formData.firstName,
+        formData.lastName,
         phoneValidation.formatted || undefined,
         'CLIENT' // Default role for public signup
       )
@@ -215,18 +217,31 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -235,7 +250,6 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
                 required
@@ -249,9 +263,9 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                 id="phone"
                 name="phone"
                 type="tel"
-                placeholder="+1 (787) 878-7878"
                 value={formData.phone}
                 onChange={handleChange}
+                required
                 disabled={isLoading}
               />
             </div>
@@ -262,7 +276,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="••••••••••••"
+              
                 value={formData.password}
                 onChange={handleChange}
                 required
@@ -279,7 +293,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
-                placeholder="••••••••••••"
+               
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required

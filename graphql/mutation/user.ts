@@ -11,6 +11,7 @@ export const UPDATE_USER_PROFILE = `
         role
         pendingRequest
         name
+        lastname
         lastLogin
         lastActiveAt
         isActive

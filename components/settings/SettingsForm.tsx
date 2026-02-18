@@ -9,6 +9,7 @@ import { AlertCircle, CheckCircle } from 'lucide-react'
 
 interface SettingsFormProps {
   initialName?: string
+  initialLastname?: string
   initialEmail?: string
   initialPhone?: string
   initialAddress?: string
@@ -18,6 +19,7 @@ interface SettingsFormProps {
   initialNumberOfDependents?: number
   onUpdate?: (formData: {
     name: string
+    lastname: string
     email: string
     phone: string
     address?: string
@@ -30,6 +32,7 @@ interface SettingsFormProps {
 
 export function SettingsForm({
   initialName = '',
+  initialLastname = '',
   initialEmail = '',
   initialPhone = '',
   initialAddress = '',
@@ -90,6 +93,7 @@ export function SettingsForm({
   const [formData, setFormData] = useState({
     name: initialName,
     email: initialEmail,
+    lastname: initialLastname,
     phone: formatPhoneForDisplay(initialPhone),
     address: initialAddress,
     ssn: formatSsnForDisplay(initialSsn),
@@ -236,6 +240,7 @@ export function SettingsForm({
         // Use formatted phone number (E.164 format) for backend
         await onUpdate({
           name: formData.name,
+          lastname: formData.lastname,
           email: formData.email,
           phone: phoneValidation.formatted || formData.phone,
           address: formData.address,
@@ -296,6 +301,19 @@ export function SettingsForm({
               type="text"
               placeholder="Enter your name"
               value={formData.name}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="lastname">Last Name</Label>
+            <Input
+              id="lastname"
+              name="lastname"
+              type="text"
+              placeholder="Enter your last name"
+              value={formData.lastname}
               onChange={handleChange}
               disabled={isLoading}
             />
