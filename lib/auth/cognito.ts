@@ -66,7 +66,8 @@ export async function signIn(email: string, password: string) {
 export async function signUp(
   email: string,
   password: string,
-  name: string,
+  firstName: string,
+  lastName: string,
   phone?: string,
   role: "ADMIN" | "TAX_PRO" | "CLIENT" = "CLIENT"
 ) {
@@ -77,7 +78,8 @@ export async function signUp(
       options: {
         userAttributes: {
           email,
-          name,
+          name: firstName,
+          family_name: lastName,
           ...(phone && { phone_number: phone }),
           "custom:role": role,
         },

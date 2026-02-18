@@ -15,6 +15,7 @@ export interface User {
   lastLogin: string
   lastActiveAt?: string
   name: string
+  lastname: string
   phone: string
   role: 'ADMIN' | 'TAX_PRO' | 'CLIENT'
   status?: UserStatus
