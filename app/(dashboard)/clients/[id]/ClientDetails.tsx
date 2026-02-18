@@ -144,12 +144,7 @@ export default function ClientDetailPage({ id }: PageProps) {
 
   // Debug logs
   useEffect(() => {
-    console.log('🔍 Client ID:', id)
-    console.log('🔍 Current User:', user?.id, user?.name)
-    console.log('🔍 Conversations Data:', conversationsData)
-    console.log('🔍 Client Conversation ID:', clientConversationId)
-    console.log('🔍 Messages Data:', messagesData)
-    console.log('🔍 Messages Loading:', messagesLoading)
+
   }, [id, user, conversationsData, clientConversationId, messagesData, messagesLoading])
 
   const isSearching = searchQuery.trim().length > 0
