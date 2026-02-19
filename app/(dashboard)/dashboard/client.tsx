@@ -92,11 +92,32 @@ export default function ClientDashboard() {
     })
   }, [conversationMessages, user])
 
+  // Calculate days until April 15, 2026 (Tax Deadline)
+  const calculateDaysUntilDeadline = () => {
+    const today = new Date()
+    const taxDeadline = new Date(2026, 3, 15) // April 15, 2026 (month is 0-indexed)
+    const diffMs = taxDeadline.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+    return Math.max(0, diffDays)
+  }
+
+  // Calculate days until April 1, 2026 (Internal Deadline)
+  const calculateDaysUntilInternalDeadline = () => {
+    const today = new Date()
+    const internalDeadline = new Date(2026, 3, 1) // April 1, 2026
+    const diffMs = internalDeadline.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+    return Math.max(0, diffDays)
+  }
+
+  const daysUntilDeadline = calculateDaysUntilDeadline()
+  const daysUntilInternalDeadline = calculateDaysUntilInternalDeadline()
+
   const stats = [
     { label: 'Documents Uploaded', value: clientStats?.documentsUploaded?.toString() || '0', icon: '📄' },
     { label: 'Messages', value: clientStats?.unreadMessages?.toString() || '0', icon: '💬' },
     { label: 'Pending Requests', value: clientStats?.pendingRequest?.toString() || '0', icon: '⏳' },
-    { label: 'Days Until Deadline', value: '45', icon: '📅' },
+    { label: 'Days Until Deadline', value: daysUntilDeadline.toString(), description: 'Time remaining to complete your 2025 tax return', icon: '📅' },
   ]
 
   return (
@@ -120,9 +141,44 @@ export default function ClientDashboard() {
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
             </CardContent>
+
+            <CardDescription className="px-4 pb-4 text-sm text-muted-foreground">
+              {stat.description || ''}
+            </CardDescription>
           </Card>
         ))}
       </div>
+
+      {/* Countdown Timer - Critical Deadline */}
+      <Card>
+   
+        <CardContent className="space-y-6">
+
+          <Separator  />
+
+          {/* Internal Deadline Warning */}
+          <div className="bg-yellow-100 dark:bg-yellow-950/40 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 rounded">
+            <p className="text-sm font-semibold text-yellow-900 dark:text-yellow-200 mb-2">
+              ⚠️ Important Internal Deadline
+            </p>
+            <p className="text-sm text-yellow-800 dark:text-yellow-300">
+              All documents and questionnaire need to be completed by <strong>April 1st, 2026</strong> to guarantee completion by the tax deadline. 
+              <br />
+              <span className="text-xs mt-2 block">({daysUntilInternalDeadline} days remaining)</span>
+            </p>
+          </div>
+
+          {/* Reassurance Message */}
+          <div className="bg-green-100 dark:bg-green-950/40 border-l-4 border-green-500 dark:border-green-600 p-4 rounded">
+            <p className="text-sm font-semibold text-green-900 dark:text-green-200 mb-2">
+              ✓ We've Got Your Back
+            </p>
+            <p className="text-sm text-green-800 dark:text-green-300">
+              If you miss the April 1st internal deadline, we will extend the tax return filing to ensure you avoid any late filing penalties from the IRS. Your compliance is our priority.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Status Tracker */}
       <Card>
