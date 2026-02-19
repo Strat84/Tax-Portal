@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -28,6 +28,11 @@ export default function TaxProClientsPage() {
   const { users, loading, loadingMore, loadMore, hasMore } = useListUsers(10)
   const { stats: taxProStats } = useTaxProUserStats()
   const observerTarget = useRef<HTMLDivElement>(null)
+
+  // State for search and filters
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all-status')
+  const [yearFilter, setYearFilter] = useState('2025')
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
@@ -56,8 +61,9 @@ export default function TaxProClientsPage() {
   const clients = users?.map((user) => ({
     id: user.id,
     name: user.name,
+    lastname: user.lastname,
     email: user.email,
-    status: user.role, // Static for now
+    status: user.taxReturnStatus, // Use actual tax return status instead of role
     lastActivity: formatRelativeTime(user.lastActiveAt),
     taxYear: 2025, // Static for now
     phone: user.phone || 'N/A',
@@ -66,29 +72,51 @@ export default function TaxProClientsPage() {
 
   })) || []
 
+  // Filter clients based on search term and filters
+  const filteredClients = clients.filter((client) => {
+    // Search by name or lastname or email
+    const searchLower = searchTerm.toLowerCase()
+    const matchesSearch = 
+      client.name.toLowerCase().includes(searchLower) ||
+      client.lastname.toLowerCase().includes(searchLower) ||
+      client.email.toLowerCase().includes(searchLower)
+
+    // Filter by status
+    const matchesStatus = 
+      statusFilter === 'all-status' || 
+      client.status === statusFilter
+
+    // Filter by tax year
+    const matchesYear = 
+      yearFilter === 'all' || 
+      client.taxYear.toString() === yearFilter
+
+    return matchesSearch && matchesStatus && matchesYear
+  })
+
   const statusColors: Record<string, string> = {
-    documents_pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
-    documents_received: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
-    in_progress: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
-    ready_for_review: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
-    filed: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
-    complete: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
+    DOCUMENTS_PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
+    DOCUMENTS_RECEIVED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+    IN_PROGRESS: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
+    READY_FOR_REVIEW: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
+    FILED: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+    COMPLETE: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
   }
 
   const statusLabels: Record<string, string> = {
-    documents_pending: 'Docs Pending',
-    documents_received: 'Docs Received',
-    in_progress: 'In Progress',
-    ready_for_review: 'Ready for Review',
-    filed: 'Filed',
-    complete: 'Complete',
+    DOCUMENTS_PENDING: 'Docs Pending',
+    DOCUMENTS_RECEIVED: 'Docs Received',
+    IN_PROGRESS: 'In Progress',
+    READY_FOR_REVIEW: 'Ready for Review',
+    FILED: 'Filed',
+    COMPLETE: 'Complete',
   }
 
   const stats = [
     { label: 'Total Clients', value: taxProStats?.totalClients?.toString() || '0', icon: '👥' },
-    { label: 'Active Returns', value: '12', icon: '📋' },
-    { label: 'Needs Attention', value: '5', icon: '⚠️' },
-    { label: 'Completed', value: '7', icon: '✅' },
+    { label: 'Active Returns', value: taxProStats?.activeReturns?.toString() || '0', icon: '📋' },
+    { label: 'Needs Attention', value: taxProStats?.needAttention?.toString() || '0', icon: '⚠️' },
+    { label: 'Completed', value: taxProStats?.completedReturns?.toString() || '0', icon: '✅' },
   ]
 
   return (
@@ -101,7 +129,7 @@ export default function TaxProClientsPage() {
             Manage your clients and their tax returns
           </p>
         </div>
-        <Button size="lg">
+        {/* <Button size="lg">
           <svg
             className="h-5 w-5 mr-2"
             fill="none"
@@ -116,7 +144,7 @@ export default function TaxProClientsPage() {
             />
           </svg>
           Add Client
-        </Button>
+        </Button> */}
       </div>
 
       {/* Stats Cards */}
@@ -152,9 +180,14 @@ export default function TaxProClientsPage() {
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <Input placeholder="Search clients..." className="pl-10" />
+              <Input 
+                placeholder="Search clients..." 
+                className="pl-10" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <Select defaultValue="all-status">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -167,7 +200,7 @@ export default function TaxProClientsPage() {
                 <SelectItem value="complete">Complete</SelectItem>
               </SelectContent>
             </Select>
-            <Select defaultValue="2025">
+            <Select value={yearFilter} onValueChange={setYearFilter}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Tax year" />
               </SelectTrigger>
@@ -210,28 +243,34 @@ export default function TaxProClientsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : clients.length === 0 ? (
+              ) : filteredClients.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                    No clients found
+                    {searchTerm || statusFilter !== 'all-status' || yearFilter !== '2025' 
+                      ? 'No clients match your search or filters' 
+                      : 'No clients found'}
                   </TableCell>
                 </TableRow>
               ) : (
                 <>
-                  {clients.map((client) => (
+                  {filteredClients.map((client) => (
                     <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50">
                       <TableCell>
                         <Link href={`/clients/${client.id}`}>
                           <div>
-                            <p className="font-medium hover:underline">{client.name}</p>
+                            <p className="font-medium hover:underline">{client.name} {client.lastname}</p>
                             <p className="text-sm text-muted-foreground">{client.email}</p>
                           </div>
                         </Link>
                       </TableCell>
                       <TableCell>
-                        <Badge className={statusColors[client.status]} variant="outline">
-                          {statusLabels[client.status]}
-                        </Badge>
+                        {client.status ? (
+                          <Badge className={statusColors[client.status]} variant="outline">
+                            {statusLabels[client.status]}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-center">
                         {typeof client.pendingDocs === "number" && client.pendingDocs > 0 ? (
