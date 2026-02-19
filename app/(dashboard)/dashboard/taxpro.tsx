@@ -31,10 +31,7 @@ export default function TaxProDashboard() {
 
   // Calculate stats from actual data
   const totalClients = taxProStats?.totalClients || 0
-  const activeReturns = clients.filter(client =>
-    client.taxReturnStatus &&
-    ['IN_PROGRESS', 'READY_FOR_REVIEW', 'DOCUMENTS_RECEIVED'].includes(client.taxReturnStatus)
-  ).length
+  const activeReturns = taxProStats?.activeReturns || 0
   const pendingRequests = taxProStats?.pendingRequest || 0
   const unreadMessages = taxProStats?.unreadMessages || 0
 
