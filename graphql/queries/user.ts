@@ -16,6 +16,9 @@ export const GET_TAX_PRO_USER = `
         totalClients
         pendingRequest
         unreadMessages
+        activeReturns
+        needAttention
+        completedReturns
     }
   }
 `
@@ -65,6 +68,7 @@ export const LIST_USER = `
         role
         pendingRequest
         name
+        lastname
         lastLogin
         lastActiveAt
         isActive
