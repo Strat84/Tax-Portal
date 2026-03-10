@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { FilePreview } from '@/graphql/types/message'
 import {
   isValidFileType,
   isImageFile,
@@ -18,12 +19,9 @@ interface FileAttachmentProps {
   disabled?: boolean
 }
 
-export interface FilePreview {
-  file: File
-  preview?: string
-  uploading: boolean
-  progress: number
-  error?: string
+interface FilePreviewCardProps {
+  filePreview: FilePreview
+  onRemove: () => void
 }
 
 export default function FileAttachment({
@@ -94,11 +92,6 @@ export default function FileAttachment({
       </Button>
     </>
   )
-}
-
-interface FilePreviewCardProps {
-  filePreview: FilePreview
-  onRemove: () => void
 }
 
 export function FilePreviewCard({ filePreview, onRemove }: FilePreviewCardProps) {
