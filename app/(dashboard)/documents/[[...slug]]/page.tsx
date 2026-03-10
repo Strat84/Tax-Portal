@@ -6,16 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Label } from '@/components/ui/label'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +20,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useListUsers } from '@/hooks/useUserQuery'
 import { useFetchFiles, useCreateFolder, useSearchFiles, useDeleteFile, useUpdateFile } from '@/hooks/useFileQuery'
 import { createFolderPath, getFileUrlForPreview } from '@/lib/storage/fileUpload'
+import CreateFolderDialog from '@/components/documents/CreateFolderDialog'
+import UploadFilesDialog from '@/components/documents/UploadFilesDialog'
+import DeleteConfirmDialog from '@/components/documents/DeleteConfirmDialog'
+import RenameDialog from '@/components/documents/RenameDialog'
 
 interface FolderItem {
   id: string
@@ -503,92 +497,26 @@ function DocumentsView({
         </div>
         {!isTaxProViewingClient && (
           <div className="flex gap-2">
-            <Dialog open={createFolderDialogOpen} onOpenChange={setCreateFolderDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                  </svg>
-                  New Folder
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Folder</DialogTitle>
-                  <DialogDescription>
-                    Create a new folder in {currentFolderName}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="folder-name">Folder Name</Label>
-                    <Input
-                      id="folder-name"
-                      placeholder="e.g., 2025 Receipts"
-                      value={newFolderName}
-                      onChange={(e) => setNewFolderName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !creatingFolder && handleCreateFolder()}
-                      disabled={creatingFolder}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setCreateFolderDialogOpen(false)}
-                    disabled={creatingFolder}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleCreateFolder}
-                    disabled={creatingFolder || !newFolderName.trim()}
-                  >
-                    {creatingFolder ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Creating...
-                      </>
-                    ) : (
-                      'Create Folder'
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <CreateFolderDialog
+              open={createFolderDialogOpen}
+              onOpenChange={setCreateFolderDialogOpen}
+              folderName={newFolderName}
+              onFolderNameChange={setNewFolderName}
+              loading={creatingFolder}
+              onConfirm={handleCreateFolder}
+              currentFolderName={currentFolderName}
+            />
 
-            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="lg">
-                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  Upload Files
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Upload Documents</DialogTitle>
-                  <DialogDescription>
-                    Upload files to {currentFolderName}
-                  </DialogDescription>
-                </DialogHeader>
-                <FileUpload
-                  userId={userId || ''}
-                  parentPath={currentPathForApi}
-                  onUploadComplete={() => {
-                    setUploadDialogOpen(false)
-                    memoizedFetchFiles(currentPathForApi)
-                  }}
-                  maxFiles={5}
-                  documentRequestId={currentFolderDocumentRequest.id}
-                  documentRequestSK={currentFolderDocumentRequest.SK}
-                />
-              </DialogContent>
-            </Dialog>
+            <UploadFilesDialog
+              open={uploadDialogOpen}
+              onOpenChange={setUploadDialogOpen}
+              userId={userId || ''}
+              parentPath={currentPathForApi}
+              onUploadComplete={() => memoizedFetchFiles(currentPathForApi)}
+              currentFolderName={currentFolderName}
+              documentRequestId={currentFolderDocumentRequest.id}
+              documentRequestSK={currentFolderDocumentRequest.SK}
+            />
           </div>
         )}
       </div>
@@ -840,124 +768,30 @@ function DocumentsView({
         onNavigate={(id) => setSelectedFileId(id)}
       />
 
-      {deleteConfirmOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-8 shadow-xl flex flex-col items-center gap-4 max-w-md w-full mx-4">
-            <div className="text-6xl mb-2">⚠️</div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 text-center">
-              Are you sure?
-            </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
-              {itemToDelete && (
-                <>
-                  Do you want to delete <strong>"{itemToDelete.name}"</strong>? This action cannot be undone.
-                </>
-              )}
-            </p>
-            <div className="flex gap-3 w-full mt-4">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => {
-                  setDeleteConfirmOpen(false)
-                  setItemToDelete(null)
-                }}
-                disabled={deletingFile}
-              >
-                No
-              </Button>
-              <Button
-                variant="destructive"
-                className="flex-1"
-                onClick={confirmDelete}
-                disabled={deletingFile}
-              >
-                {deletingFile ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Deleting...
-                  </>
-                ) : (
-                  'Yes, Delete'
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmDialog
+        open={deleteConfirmOpen}
+        itemToDelete={itemToDelete}
+        loading={deletingFile}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setDeleteConfirmOpen(false)
+          setItemToDelete(null)
+        }}
+      />
 
-      {renameDialogOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-xl max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Rename {itemToRename?.type === 'FOLDER' ? 'Folder' : 'File'}
-              </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => {
-                  setRenameDialogOpen(false)
-                  setItemToRename(null)
-                  setNewName('')
-                }}
-                disabled={updatingFile}
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </Button>
-            </div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="rename-input">New Name</Label>
-                <Input
-                  id="rename-input"
-                  placeholder="Enter new name"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !updatingFile && confirmRename()}
-                  disabled={updatingFile}
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-3 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setRenameDialogOpen(false)
-                    setItemToRename(null)
-                    setNewName('')
-                  }}
-                  disabled={updatingFile}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={confirmRename}
-                  disabled={updatingFile || !newName.trim()}
-                >
-                  {updatingFile ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Updating...
-                    </>
-                  ) : (
-                    'Update'
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <RenameDialog
+        open={renameDialogOpen}
+        itemToRename={itemToRename}
+        newName={newName}
+        onNameChange={setNewName}
+        loading={updatingFile}
+        onConfirm={confirmRename}
+        onCancel={() => {
+          setRenameDialogOpen(false)
+          setItemToRename(null)
+          setNewName('')
+        }}
+      />
     </div>
   )
 }
@@ -1128,10 +962,18 @@ function DocumentsPageContent() {
   const { user } = useAuth()
   const router = useRouter()
   const params = useParams<{ slug?: string[] }>()
+  const { users } = useListUsers()
   const slugParam = params?.slug
   const slugArray = (Array.isArray(slugParam) ? slugParam : (typeof slugParam === 'string' ? [slugParam] : [])).map(segment => decodeURIComponent(segment))
   const selectedUserId = slugArray[0]
   const folderSegments = slugArray.slice(1)
+
+  // Get the selected user's name from the users list
+  const selectedUserName = useMemo(() => {
+    if (!selectedUserId || !users) return undefined
+    const selectedUser = users.find(u => u.id === selectedUserId)
+    return selectedUser?.name
+  }, [selectedUserId, users])
 
   useEffect(() => {
     if (!user) return
@@ -1153,7 +995,7 @@ function DocumentsPageContent() {
   }
 
   if (selectedUserId) {
-    return <DocumentsView userId={selectedUserId} userName="Client Documents" pathSegments={folderSegments} />
+    return <DocumentsView userId={selectedUserId} userName={selectedUserName} pathSegments={folderSegments} />
   }
 
   if (user?.role === 'TAX_PRO') {
