@@ -19,11 +19,12 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useListUsers } from '@/hooks/useUserQuery'
 import { useFetchFiles, useCreateFolder, useSearchFiles, useDeleteFile, useUpdateFile } from '@/hooks/useFileQuery'
-import { createFolderPath, getFileUrlForPreview } from '@/lib/storage/fileUpload'
+import { createFolderPath, getFileUrlForPreview, moveFileOrFolder } from '@/lib/storage/fileUpload'
 import CreateFolderDialog from '@/components/documents/CreateFolderDialog'
 import UploadFilesDialog from '@/components/documents/UploadFilesDialog'
 import DeleteConfirmDialog from '@/components/documents/DeleteConfirmDialog'
 import RenameDialog from '@/components/documents/RenameDialog'
+import MoveDialog from '@/components/documents/MoveDialog'
 
 interface FolderItem {
   id: string
@@ -77,6 +78,9 @@ function DocumentsView({
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
   const [itemToRename, setItemToRename] = useState<FolderItem | null>(null)
   const [newName, setNewName] = useState('')
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false)
+  const [itemToMove, setItemToMove] = useState<FolderItem | null>(null)
+  const [movingFile, setMovingFile] = useState(false)
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({})
   const fetchingUrlsRef = useRef<Set<string>>(new Set())
   const fileUrlsRef = useRef<Record<string, string>>({})
@@ -406,6 +410,110 @@ function DocumentsView({
     }
   }
 
+  const handleMoveItem = (item: FolderItem) => {
+    setItemToMove(item)
+    setMoveDialogOpen(true)
+  }
+
+  const confirmMove = async (destinationFolder: FolderItem | null) => {
+    if (!itemToMove || !userId) return
+
+    try {
+      setMovingFile(true)
+
+      const apiFile = activeFiles.find((f: any) => {
+        const fileId = f.SK.replace('FILE#', '').replace('FOLDER#', '')
+        return fileId === itemToMove.id
+      })
+
+      if (!apiFile) {
+        console.error('API file not found for move')
+        alert('File not found. Please refresh and try again.')
+        setMoveDialogOpen(false)
+        setItemToMove(null)
+        setMovingFile(false)
+        return
+      }
+
+      // Determine destination path
+      let destinationParentPath: string
+      if (destinationFolder === null) {
+        // Moving to root
+        destinationParentPath = `private/${userId}`
+      } else {
+        // Moving into a folder - use the folder's fullPath (s3Key)
+        const destS3Key = destinationFolder.s3Key || destinationFolder.fullPath || ''
+        // Remove trailing slash if present
+        destinationParentPath = destS3Key.replace(/\/$/, '')
+      }
+
+      console.log('Moving item:', {
+        itemName: itemToMove.name,
+        oldS3Key: apiFile.s3Key || apiFile.fullPath,
+        destinationParentPath,
+        isFolder: itemToMove.type === 'FOLDER'
+      })
+
+      // Move in S3
+      const newS3Key = await moveFileOrFolder(
+        apiFile.s3Key || apiFile.fullPath,
+        destinationParentPath,
+        itemToMove.name,
+        itemToMove.type === 'FOLDER'
+      )
+
+      console.log('S3 move complete, new key:', newS3Key)
+
+      // Calculate new parent path for database (should be /folder/ format)
+      let newParentPath: string
+      if (destinationFolder === null) {
+        newParentPath = '/'
+      } else {
+        // Use the folder's path + folder name
+        const folderPath = destinationFolder.path === '/'
+          ? `/${destinationFolder.name}`
+          : `${destinationFolder.path}/${destinationFolder.name}`
+        newParentPath = `${folderPath}/`
+      }
+
+      // Update database with new parentPath and s3Key
+      await updateFile({
+        fullPath: apiFile.fullPath,
+        name: itemToMove.name,
+        parentPath: newParentPath,
+        s3Key: newS3Key
+      })
+
+      // Clear cached URL for moved file
+      if (itemToMove.type === 'FILE' || itemToMove.type === 'IMAGE') {
+        setFileUrls(prev => {
+          const updated = { ...prev }
+          delete updated[itemToMove.id]
+          return updated
+        })
+        fetchingUrlsRef.current.delete(itemToMove.id)
+      }
+
+      setMoveDialogOpen(false)
+      setItemToMove(null)
+      setMovingFile(false)
+
+      // Refresh the file list
+      if (isSearching) {
+        if (searchQuery.trim()) {
+          searchFiles(searchQuery.trim())
+        }
+      } else {
+        memoizedFetchFiles(currentPathForApi)
+      }
+    } catch (error) {
+      console.error('Failed to move item:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to move item. Please try again.'
+      alert(errorMessage)
+      setMovingFile(false)
+    }
+  }
+
   useEffect(() => {
     console.log('📦 apiFiles changed:', apiFiles.length)
   }, [apiFiles])
@@ -651,7 +759,12 @@ function DocumentsView({
                         >
                           Rename
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleMoveItem(item)
+                          }}
+                        >
                           Move
                         </DropdownMenuItem>
                         {item.type === 'FILE' && <DropdownMenuItem>Download</DropdownMenuItem>}
@@ -736,7 +849,12 @@ function DocumentsView({
                         >
                           Rename
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleMoveItem(item)
+                          }}
+                        >
                           Move
                         </DropdownMenuItem>
                         {item.type === 'FILE' && <DropdownMenuItem>Download</DropdownMenuItem>}
@@ -790,6 +908,19 @@ function DocumentsView({
           setRenameDialogOpen(false)
           setItemToRename(null)
           setNewName('')
+        }}
+      />
+
+      <MoveDialog
+        open={moveDialogOpen}
+        itemToMove={itemToMove}
+        availableFolders={folders}
+        currentPath={currentPath}
+        loading={movingFile}
+        onConfirm={confirmMove}
+        onCancel={() => {
+          setMoveDialogOpen(false)
+          setItemToMove(null)
         }}
       />
     </div>

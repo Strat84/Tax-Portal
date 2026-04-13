@@ -281,7 +281,9 @@ export function useUpdateFile() {
 
   const updateFile = useCallback(async (input: {
     fullPath: string
-    name: string
+    name?: string
+    parentPath?: string
+    s3Key?: string
   }) => {
     setLoading(true)
     setError(null)

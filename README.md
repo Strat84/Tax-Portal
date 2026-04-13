@@ -1,6 +1,6 @@
 # Tax Client Portal
 
-A modern, secure tax document management and collaboration platform built with Next.js 14, AWS Cognito, and Supabase.
+A modern, secure tax document management and collaboration platform built with Next.js 14 and AWS services.
 
 ## 🎯 Overview
 
@@ -38,11 +38,11 @@ The Tax Client Portal is a comprehensive platform that facilitates seamless coll
 - **Frontend**: Next.js 14 (App Router), React, TypeScript
 - **Styling**: Tailwind CSS, Shadcn/ui components
 - **Authentication**: AWS Cognito with MFA support
-- **Database**: PostgreSQL (Supabase)
-- **Storage**: Supabase Storage for documents
+- **Database**: AWS DynamoDB
+- **API**: AWS AppSync GraphQL
+- **Storage**: AWS S3 for documents
 - **Email**: Resend for transactional emails
 - **Deployment**: AWS Amplify (recommended)
-- **Serverless**: AWS Lambda for Cognito triggers
 
 ## 📁 Project Structure
 
@@ -71,17 +71,17 @@ tax-portal/
 ├── contexts/                     # React contexts
 │   └── AuthContext.tsx           # Authentication context
 ├── hooks/                        # Custom React hooks
-│   ├── useDocuments.ts
+│   ├── useFileQuery.ts
 │   ├── useDocumentRequests.ts
-│   └── useMessages.ts
+│   ├── useMessages.ts
+│   └── useUserQuery.ts
 ├── lib/                          # Library code
-│   ├── api/                      # API helper functions
+│   ├── appsync/                  # GraphQL client
 │   ├── auth/                     # Authentication utilities
-│   └── db/                       # Database clients
-├── lambda/                       # AWS Lambda functions
-│   └── cognito-post-confirmation/
-├── supabase/                     # Supabase configurations
-│   └── migrations/               # Database migrations
+│   └── storage/                  # S3 file operations
+├── graphql/                      # GraphQL queries and mutations
+│   ├── queries/
+│   └── mutation/
 ├── docs/                         # Documentation
 └── public/                       # Static assets
 ```
@@ -91,8 +91,7 @@ tax-portal/
 ### Prerequisites
 
 - Node.js 20+ and npm
-- AWS Account (for Cognito)
-- Supabase Account (for database and storage)
+- AWS Account (for Cognito, AppSync, DynamoDB, and S3)
 - Resend Account (for emails)
 
 ### 1. Clone the Repository
@@ -122,10 +121,9 @@ NEXT_PUBLIC_AWS_REGION=us-east-1
 NEXT_PUBLIC_COGNITO_USER_POOL_ID_PROD=us-east-1_yyyyy
 NEXT_PUBLIC_COGNITO_CLIENT_ID_PROD=yyyyyyyyyyyyyyyyyyyyy
 
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx...
-SUPABASE_SERVICE_ROLE_KEY=eyJxxx...
+# AWS AppSync GraphQL API
+NEXT_PUBLIC_GRAPHQL_API_URL=https://xxxxx.appsync-api.us-east-1.amazonaws.com/graphql
+NEXT_PUBLIC_API_KEY=da2-xxxxxxxxxxxxxxxxxxxxx
 
 # Resend
 RESEND_API_KEY=re_xxxxx
@@ -150,38 +148,41 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 3. **Configure User Groups**:
    - Create groups: "admins", "tax_professionals", "clients"
 
-4. **Set Up Lambda Triggers**:
-   - Deploy the Lambda function from `/lambda/cognito-post-confirmation`
-   - Attach to Post-Confirmation trigger
-   - See `lambda/cognito-post-confirmation/README.md` for details
+### 5. Set Up AWS AppSync (GraphQL API)
 
-### 5. Set Up Supabase
+1. **Create AppSync API**:
+   - Go to AWS AppSync Console
+   - Create a new GraphQL API
+   - Choose "Build from scratch"
+   - Configure API name and authorization mode (API Key + Cognito)
 
-1. **Create Project**: Create a new Supabase project
+2. **Create DynamoDB Tables**:
+   - Create tables for: users, files, conversations, messages, document_requests
+   - Configure GSI (Global Secondary Indexes) as needed
+   - Connect tables to AppSync data sources
 
-2. **Run Migrations**:
-   ```bash
-   # Install Supabase CLI
-   npm install -g supabase
+3. **Deploy GraphQL Schema**:
+   - Upload your GraphQL schema to AppSync
+   - Configure resolvers for queries and mutations
+   - Test queries in AppSync console
 
-   # Link to your project
-   supabase link --project-ref <your-project-ref>
+### 6. Set Up AWS S3 Storage
 
-   # Run migrations
-   supabase db push
-   ```
+1. **Create S3 Bucket**:
+   - Go to AWS S3 Console
+   - Create bucket for document storage
+   - Enable versioning (recommended)
 
-   Or manually run the migrations in Supabase SQL Editor:
-   - `supabase/migrations/001_initial_schema.sql`
-   - `supabase/migrations/002_rls_policies.sql`
-   - `supabase/migrations/003_document_requests_enhancement.sql`
+2. **Configure CORS**:
+   - Add CORS policy for file uploads/downloads
+   - Allow origins: your app domain
 
-3. **Configure Storage**:
-   - Create a bucket named `documents`
-   - Set up RLS policies for the bucket
-   - Configure CORS for file preview
+3. **Set Up IAM Permissions**:
+   - Create IAM role for authenticated users
+   - Grant S3 read/write permissions to user folders
+   - Configure bucket policies
 
-### 6. Run Development Server
+### 7. Run Development Server
 
 ```bash
 npm run dev
@@ -214,10 +215,10 @@ Visit [http://localhost:3000](http://localhost:3000)
 ## 🔒 Security Features
 
 - **Authentication**: AWS Cognito with MFA support
-- **Authorization**: Row-Level Security (RLS) in Supabase
+- **Authorization**: Fine-grained access control via AppSync resolvers
 - **JWT Validation**: Server-side token verification
-- **File Security**: Signed URLs with expiration
-- **Audit Logging**: Complete activity trail
+- **File Security**: Signed S3 URLs with expiration
+- **Audit Logging**: Complete activity trail in DynamoDB
 - **HTTPS**: Enforced in production
 - **CORS**: Configured for secure file access
 - **Input Validation**: Client and server-side
@@ -310,12 +311,12 @@ Edit `lib/auth/cognito.ts` to customize:
 - User attributes
 - Sign-in options
 
-### Database Configuration
+### GraphQL API Configuration
 
-Edit `lib/db/supabase.ts` for:
-- Connection pooling
-- Query optimization
-- Custom functions
+Edit `lib/appsync/client.ts` for:
+- API endpoint configuration
+- Authentication settings
+- Error handling
 
 ### Email Configuration
 
@@ -333,9 +334,9 @@ Edit email templates in Resend dashboard or create custom templates.
 
 ### Adding a New Feature
 
-1. Create database migration if needed
-2. Create API functions in `lib/api/`
-3. Create custom hook in `hooks/`
+1. Update GraphQL schema in AppSync if needed
+2. Add queries/mutations to `graphql/` directory
+3. Create custom hook in `hooks/` using GraphQL client
 4. Build UI components
 5. Integrate with pages
 6. Update documentation
@@ -349,15 +350,17 @@ Edit email templates in Resend dashboard or create custom templates.
 - Check Amplify configuration
 - Ensure cookies are enabled
 
-**Database queries failing**:
-- Check RLS policies in Supabase
-- Verify service role key for admin operations
+**GraphQL queries failing**:
+- Verify AppSync API endpoint in `.env.local`
+- Check API key and Cognito authentication
+- Review resolver configurations in AppSync console
 - Check network connectivity
 
 **File upload not working**:
-- Verify Supabase Storage bucket exists
-- Check storage RLS policies
-- Verify file size limits
+- Verify S3 bucket exists and is accessible
+- Check IAM permissions for authenticated users
+- Verify file size limits in S3 and application
+- Check CORS configuration on S3 bucket
 
 **Preview not loading**:
 - Check CORS configuration
@@ -366,7 +369,7 @@ Edit email templates in Resend dashboard or create custom templates.
 
 ## 📊 Database Schema
 
-See `supabase/migrations/` for complete schema.
+The application uses DynamoDB tables with the following structure:
 
 Key tables:
 - `users` - All platform users
@@ -409,5 +412,7 @@ Built with:
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Shadcn/ui](https://ui.shadcn.com/)
 - [AWS Cognito](https://aws.amazon.com/cognito/)
-- [Supabase](https://supabase.com/)
+- [AWS AppSync](https://aws.amazon.com/appsync/)
+- [AWS S3](https://aws.amazon.com/s3/)
+- [AWS DynamoDB](https://aws.amazon.com/dynamodb/)
 - [Resend](https://resend.com/)

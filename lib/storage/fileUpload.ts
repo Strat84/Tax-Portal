@@ -590,3 +590,156 @@ export const renameFolderOptimized = async (
     throw new Error('Failed to rename folder. Please try again.');
   }
 };
+
+/**
+ * Move a file or folder to a new parent directory
+ * @param oldS3Key - Current S3 path of the file/folder
+ * @param newParentPath - New parent directory path (e.g., "private/userId/newFolder/")
+ * @param fileName - Name of the file/folder being moved
+ * @param isFolder - Whether the item is a folder
+ * @returns New S3 path after move
+ */
+export const moveFileOrFolder = async (
+  oldS3Key: string,
+  newParentPath: string,
+  fileName: string,
+  isFolder: boolean = false
+): Promise<string> => {
+  try {
+    console.log('🚀 Moving item:', { oldS3Key, newParentPath, fileName, isFolder });
+
+    // Clean the new parent path - ensure it doesn't have trailing slash for building path
+    const cleanNewParent = newParentPath.replace(/\/+$/g, '');
+
+    // Build new S3 key
+    const newS3Key = isFolder
+      ? `${cleanNewParent}/${fileName}/`
+      : `${cleanNewParent}/${fileName}`;
+
+    console.log('📍 New path will be:', newS3Key);
+
+    if (isFolder) {
+      // Move folder and all its contents
+      await moveFolderContents(oldS3Key, newS3Key);
+      return newS3Key;
+    }
+
+    // Move single file
+    // Download file data
+    const downloadResult = await downloadData({
+      path: oldS3Key,
+    }).result;
+
+    const fileBlob = await downloadResult.body.blob();
+
+    // Upload to new location
+    await uploadData({
+      path: newS3Key,
+      data: fileBlob,
+      options: {
+        contentType: downloadResult.contentType,
+      },
+    }).result;
+
+    console.log('✅ File uploaded to new location:', newS3Key);
+
+    // Delete old file
+    await remove({
+      path: oldS3Key,
+    });
+
+    console.log('✅ Old file deleted:', oldS3Key);
+
+    return newS3Key;
+  } catch (error) {
+    console.error('❌ Move file/folder error:', error);
+    throw new Error('Failed to move item. Please try again.');
+  }
+};
+
+/**
+ * Move folder contents to a new location
+ * @param oldFolderPath - Old folder path
+ * @param newFolderPath - New folder path
+ */
+const moveFolderContents = async (
+  oldFolderPath: string,
+  newFolderPath: string
+): Promise<void> => {
+  try {
+    console.log('📂 Moving folder contents from', oldFolderPath, 'to', newFolderPath);
+
+    // Ensure folder paths end with /
+    const oldPath = oldFolderPath.endsWith('/') ? oldFolderPath : `${oldFolderPath}/`;
+    const newPath = newFolderPath.endsWith('/') ? newFolderPath : `${newFolderPath}/`;
+
+    // List all items in the folder
+    const result = await list({
+      path: oldPath,
+      options: {
+        listAll: true,
+      },
+    });
+
+    console.log('📋 Found items in folder:', result.items.length);
+
+    // Filter out .folder placeholders
+    const itemsToMove = result.items.filter(item => item.path && !item.path.endsWith('.folder'));
+
+    // Process each item
+    for (const item of itemsToMove) {
+      if (!item.path) continue;
+
+      // Calculate new path
+      const relativePath = item.path.replace(oldPath, '');
+      const newItemPath = `${newPath}${relativePath}`;
+
+      console.log('📦 Moving item from', item.path, 'to', newItemPath);
+
+      // Download item
+      const downloadResult = await downloadData({
+        path: item.path,
+      }).result;
+
+      const itemBlob = await downloadResult.body.blob();
+
+      // Upload to new location
+      await uploadData({
+        path: newItemPath,
+        data: itemBlob,
+        options: {
+          contentType: downloadResult.contentType,
+        },
+      }).result;
+
+      console.log('✅ Item uploaded to:', newItemPath);
+
+      // Delete old item
+      await remove({
+        path: item.path,
+      });
+
+      console.log('✅ Old item deleted:', item.path);
+    }
+
+    // Create the new folder placeholder
+    await uploadData({
+      path: `${newPath}.folder`,
+      data: new Blob([''], { type: 'text/plain' }),
+    }).result;
+
+    // Delete old folder placeholder
+    try {
+      await remove({
+        path: `${oldPath}.folder`,
+      });
+    } catch (err) {
+      console.log('ℹ️  Old folder placeholder not found');
+    }
+
+    console.log('🎉 Folder move complete');
+  } catch (error) {
+    console.error('❌ Move folder contents error:', error);
+    throw new Error('Failed to move folder contents. Please try again.');
+  }
+};
