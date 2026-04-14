@@ -142,6 +142,11 @@ export function FileUpload({
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return
 
+    if (!userId) {
+      alert('User ID is missing. Please refresh the page and try again.')
+      return
+    }
+
     setUploading(true)
     setFileProgress({})
 
@@ -200,7 +205,8 @@ export function FileUpload({
       }, 1000)
     } catch (error) {
       console.error('Upload failed:', error)
-      alert('Upload failed. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Upload failed: ${errorMessage}\n\nPlease try again or contact support if the problem persists.`)
       setUploading(false)
       setFileProgress({})
     }

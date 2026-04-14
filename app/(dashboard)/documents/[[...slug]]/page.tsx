@@ -760,7 +760,7 @@ function DocumentsView({
                   onDoubleClick={() => handleItemDoubleClick(item)}
                   className="group border border-slate-200 dark:border-slate-700 rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-slate-800 hover:shadow-md transition-all cursor-pointer relative"
                 >
-                  {!isTaxProViewingClient && !(item.type === 'FOLDER' && item.documentRequestId) && (
+                  {!(item.type === 'FOLDER' && item.documentRequestId) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -855,7 +855,7 @@ function DocumentsView({
                       </div>
                     </div>
                   </div>
-                  {!isTaxProViewingClient && !(item.type === 'FOLDER' && item.documentRequestId) && (
+                  {!(item.type === 'FOLDER' && item.documentRequestId) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
