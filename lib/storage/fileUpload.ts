@@ -97,7 +97,10 @@ export const uploadFileToS3 = async (
     };
   } catch (error) {
     console.error('File upload error:', error);
-    throw new Error('Failed to upload file. Please try again.');
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Failed to upload file: ${String(error)}`);
   }
 };
 
@@ -137,7 +140,10 @@ export const downloadFile = async (path: string): Promise<Blob> => {
     return blob;
   } catch (error) {
     console.error('File download error:', error);
-    throw new Error('Failed to download file. Please try again.');
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Failed to download file: ${String(error)}`);
   }
 };
 
@@ -152,7 +158,10 @@ export const deleteFile = async (path: string): Promise<void> => {
     });
   } catch (error) {
     console.error('File delete error:', error);
-    throw new Error('Failed to delete file. Please try again.');
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Failed to delete file: ${String(error)}`);
   }
 };
 
@@ -653,7 +662,11 @@ export const moveFileOrFolder = async (
     return newS3Key;
   } catch (error) {
     console.error('❌ Move file/folder error:', error);
-    throw new Error('Failed to move item. Please try again.');
+    // Preserve the original error message
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Failed to move item: ${String(error)}`);
   }
 };
 
@@ -740,6 +753,10 @@ const moveFolderContents = async (
     console.log('🎉 Folder move complete');
   } catch (error) {
     console.error('❌ Move folder contents error:', error);
-    throw new Error('Failed to move folder contents. Please try again.');
+    // Preserve the original error message
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Failed to move folder contents: ${String(error)}`);
   }
 };
