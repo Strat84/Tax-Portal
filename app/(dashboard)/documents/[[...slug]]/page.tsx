@@ -479,6 +479,7 @@ function DocumentsView({
       })
 
       // Move in S3
+      console.log('Step 1: Moving file in S3...')
       const newS3Key = await moveFileOrFolder(
         apiFile.s3Key || apiFile.fullPath,
         destinationParentPath,
@@ -500,6 +501,13 @@ function DocumentsView({
         newParentPath = `${folderPath}/`
       }
 
+      console.log('Step 2: Updating database with:', {
+        fullPath: apiFile.fullPath,
+        name: itemToMove.name,
+        parentPath: newParentPath,
+        s3Key: newS3Key
+      })
+
       // Update database with new parentPath and s3Key
       await updateFile({
         fullPath: apiFile.fullPath,
@@ -507,6 +515,8 @@ function DocumentsView({
         parentPath: newParentPath,
         s3Key: newS3Key
       })
+
+      console.log('Database update complete')
 
       // Clear cached URL for moved file
       if (itemToMove.type === 'FILE' || itemToMove.type === 'IMAGE') {
@@ -532,7 +542,13 @@ function DocumentsView({
       }
     } catch (error) {
       console.error('Failed to move item:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Failed to move item. Please try again.'
+      // Show detailed error information
+      let errorMessage = 'Failed to move item. Please try again.'
+      if (error instanceof Error) {
+        errorMessage = `Move failed: ${error.message}`
+      } else if (typeof error === 'object' && error !== null) {
+        errorMessage = `Move failed: ${JSON.stringify(error)}`
+      }
       alert(errorMessage)
       setMovingFile(false)
     }
