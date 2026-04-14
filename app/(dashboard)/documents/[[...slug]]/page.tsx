@@ -84,6 +84,7 @@ function DocumentsView({
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({})
   const fetchingUrlsRef = useRef<Set<string>>(new Set())
   const fileUrlsRef = useRef<Record<string, string>>({})
+  const [allClientFolders, setAllClientFolders] = useState<FolderItem[]>([])
 
   // TAX_PRO viewing another user's documents (read-only mode)
   const isTaxProViewingClient = user?.role === 'TAX_PRO' && !!userId && userId !== user.id
@@ -165,6 +166,29 @@ function DocumentsView({
       }
     })
   }, [activeFiles])
+
+  // Accumulate all folders for this client (for move dialog)
+  useEffect(() => {
+    const newFolders = items.filter(item => item.type === 'FOLDER')
+
+    setAllClientFolders(prev => {
+      // Create a Map to deduplicate by folder ID
+      const folderMap = new Map<string, FolderItem>()
+
+      // Add existing folders
+      prev.forEach(folder => folderMap.set(folder.id, folder))
+
+      // Add new folders
+      newFolders.forEach(folder => folderMap.set(folder.id, folder))
+
+      return Array.from(folderMap.values())
+    })
+  }, [items])
+
+  // Clear accumulated folders when userId changes
+  useEffect(() => {
+    setAllClientFolders([])
+  }, [userId])
 
   useEffect(() => {
     if (!userId) return
@@ -914,7 +938,7 @@ function DocumentsView({
       <MoveDialog
         open={moveDialogOpen}
         itemToMove={itemToMove}
-        availableFolders={folders}
+        availableFolders={allClientFolders}
         currentPath={currentPath}
         loading={movingFile}
         onConfirm={confirmMove}
