@@ -1,5 +1,12 @@
 import { uploadData, downloadData, remove, getUrl, list } from 'aws-amplify/storage';
+import { Amplify } from 'aws-amplify';
+import awsConfig from '../../src/aws-exports';
 import { v4 as uuidv4 } from 'uuid';
+
+// Ensure Amplify is configured for storage operations
+if (typeof window !== 'undefined') {
+  Amplify.configure(awsConfig, { ssr: false });
+}
 
 export interface UploadProgress {
   loaded: number;
