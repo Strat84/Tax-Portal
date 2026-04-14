@@ -178,7 +178,7 @@ function DocumentsView({
       // Add existing folders
       prev.forEach(folder => folderMap.set(folder.id, folder))
 
-      // Add new folders
+      // Add new folders (this also initializes on first load)
       newFolders.forEach(folder => folderMap.set(folder.id, folder))
 
       return Array.from(folderMap.values())
@@ -189,6 +189,20 @@ function DocumentsView({
   useEffect(() => {
     setAllClientFolders([])
   }, [userId])
+
+  // Computed: folders available for move (use accumulated + current)
+  const foldersForMove = useMemo(() => {
+    const currentFolders = items.filter(item => item.type === 'FOLDER')
+    const folderMap = new Map<string, FolderItem>()
+
+    // Add all accumulated folders
+    allClientFolders.forEach(folder => folderMap.set(folder.id, folder))
+
+    // Add current visible folders (in case accumulation is empty)
+    currentFolders.forEach(folder => folderMap.set(folder.id, folder))
+
+    return Array.from(folderMap.values())
+  }, [items, allClientFolders])
 
   useEffect(() => {
     if (!userId) return
@@ -954,7 +968,7 @@ function DocumentsView({
       <MoveDialog
         open={moveDialogOpen}
         itemToMove={itemToMove}
-        availableFolders={allClientFolders}
+        availableFolders={foldersForMove}
         currentPath={currentPath}
         loading={movingFile}
         onConfirm={confirmMove}
