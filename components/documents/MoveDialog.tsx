@@ -43,6 +43,12 @@ export default function MoveDialog({
 }: MoveDialogProps) {
   const [selectedFolder, setSelectedFolder] = useState<FolderItem | null>(null)
 
+  console.log('📦 MOVE DIALOG RENDER:')
+  console.log('  open:', open)
+  console.log('  itemToMove:', itemToMove?.name)
+  console.log('  availableFolders count:', availableFolders.length)
+  console.log('  availableFolders:', availableFolders)
+
   if (!open) return null
 
   // Filter out the current item if it's a folder (can't move folder into itself)
@@ -53,6 +59,8 @@ export default function MoveDialog({
     if (itemToMove?.type === 'FOLDER' && folder.path.startsWith(itemToMove.path + '/')) return false
     return true
   })
+
+  console.log('  validFolders count:', validFolders.length)
 
   const handleConfirm = () => {
     onConfirm(selectedFolder)

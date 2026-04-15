@@ -449,8 +449,13 @@ function DocumentsView({
   }
 
   const handleMoveItem = (item: FolderItem) => {
+    console.log('🚚 MOVE BUTTON CLICKED')
+    console.log('  Item to move:', item.name)
+    console.log('  Available folders:', foldersForMove)
+    console.log('  Current moveDialogOpen:', moveDialogOpen)
     setItemToMove(item)
     setMoveDialogOpen(true)
+    console.log('  Set moveDialogOpen to TRUE')
   }
 
   const confirmMove = async (destinationFolder: FolderItem | null) => {
