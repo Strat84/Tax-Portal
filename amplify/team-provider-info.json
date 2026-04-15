@@ -1,4 +1,7 @@
 {
+  "// NOTE": "This file is used by Amplify CLI for backend deployments only.",
+  "// NOTE2": "The frontend uses environment variables from AWS Amplify Console, not this file.",
+  "// NOTE3": "webClientId below (55mb8...) is from old unused backend - ignore it.",
   "prod": {
     "awscloudformation": {
       "AuthRoleName": "amplify-taxportal-prod-cc4f6-authRole",

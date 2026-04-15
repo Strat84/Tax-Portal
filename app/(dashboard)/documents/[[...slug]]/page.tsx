@@ -485,23 +485,13 @@ function DocumentsView({
         destinationParentPath = destS3Key.replace(/\/$/, '')
       }
 
-      console.log('Moving item:', {
-        itemName: itemToMove.name,
-        oldS3Key: apiFile.s3Key || apiFile.fullPath,
-        destinationParentPath,
-        isFolder: itemToMove.type === 'FOLDER'
-      })
-
       // Move in S3
-      console.log('Step 1: Moving file in S3...')
       const newS3Key = await moveFileOrFolder(
         apiFile.s3Key || apiFile.fullPath,
         destinationParentPath,
         itemToMove.name,
         itemToMove.type === 'FOLDER'
       )
-
-      console.log('S3 move complete, new key:', newS3Key)
 
       // Calculate new parent path for database (should be /folder/ format)
       let newParentPath: string
@@ -515,13 +505,6 @@ function DocumentsView({
         newParentPath = `${folderPath}/`
       }
 
-      console.log('Step 2: Updating database with:', {
-        fullPath: apiFile.fullPath,
-        name: itemToMove.name,
-        parentPath: newParentPath,
-        s3Key: newS3Key
-      })
-
       // Update database with new parentPath and s3Key
       await updateFile({
         fullPath: apiFile.fullPath,
@@ -529,8 +512,6 @@ function DocumentsView({
         parentPath: newParentPath,
         s3Key: newS3Key
       })
-
-      console.log('Database update complete')
 
       // Clear cached URL for moved file
       if (itemToMove.type === 'FILE' || itemToMove.type === 'IMAGE') {

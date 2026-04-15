@@ -289,7 +289,12 @@ export default function ClientDetailPage({ id }: PageProps) {
 
   // Find client from users list by ID
   const clientData = useMemo(() => {
-    return users?.find(user => user.id === id)
+    console.log('🔍 CLIENT SEARCH DEBUG:')
+    console.log('  Looking for ID:', id)
+    console.log('  Available users:', users?.map(u => ({ id: u.id, name: u.name, email: u.email })))
+    const found = users?.find(user => user.id === id)
+    console.log('  Found client:', found ? 'YES' : 'NO')
+    return found
   }, [users, id])
 
   // Format phone number for display

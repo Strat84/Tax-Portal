@@ -359,7 +359,6 @@ export const renameFileOrFolder = async (
   isFolder: boolean = false
 ): Promise<string> => {
   try {
-    console.log('Renaming:', { oldS3Key, newName, isFolder });
 
     // Handle folder path (ends with /)
     if (isFolder) {
@@ -370,7 +369,6 @@ export const renameFileOrFolder = async (
       const parentPath = pathParts.join('/');
       const newS3Key = parentPath ? `${parentPath}/${newName}/` : `${newName}/`;
 
-      console.log('Renaming folder from', oldS3Key, 'to', newS3Key);
 
       // Rename folder by moving all contents
       await renameFolderContents(oldS3Key, newS3Key);
@@ -384,7 +382,6 @@ export const renameFileOrFolder = async (
     const parentPath = pathParts.join('/');
     const newS3Key = parentPath ? `${parentPath}/${newName}` : newName;
 
-    console.log('Renaming file from', oldS3Key, 'to', newS3Key);
 
     // Download file data
     const downloadResult = await downloadData({
@@ -402,14 +399,12 @@ export const renameFileOrFolder = async (
       },
     }).result;
 
-    console.log('File uploaded to new location:', newS3Key);
 
     // Delete old file
     await remove({
       path: oldS3Key,
     });
 
-    console.log('Old file deleted:', oldS3Key);
 
     return newS3Key;
   } catch (error) {
@@ -622,7 +617,6 @@ export const moveFileOrFolder = async (
   isFolder: boolean = false
 ): Promise<string> => {
   try {
-    console.log('🚀 Moving item:', { oldS3Key, newParentPath, fileName, isFolder });
 
     // Clean the new parent path - ensure it doesn't have trailing slash for building path
     const cleanNewParent = newParentPath.replace(/\/+$/g, '');
@@ -632,7 +626,6 @@ export const moveFileOrFolder = async (
       ? `${cleanNewParent}/${fileName}/`
       : `${cleanNewParent}/${fileName}`;
 
-    console.log('📍 New path will be:', newS3Key);
 
     if (isFolder) {
       // Move folder and all its contents
@@ -657,14 +650,12 @@ export const moveFileOrFolder = async (
       },
     }).result;
 
-    console.log('✅ File uploaded to new location:', newS3Key);
 
     // Delete old file
     await remove({
       path: oldS3Key,
     });
 
-    console.log('✅ Old file deleted:', oldS3Key);
 
     return newS3Key;
   } catch (error) {
